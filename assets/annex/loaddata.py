@@ -3,26 +3,17 @@ def convert_to_hex(file_path):
         hex_data = file.read().hex()
     return hex_data
 
-def save_hex_to_file(hex_data, output_file):
-    with open(output_file, 'w') as hex_file:
-        hex_file.write(hex_data)
-
 # Path to the .dat file
 file_path = 'game_save6.dat'
 
 # Convert the .dat file data to hex
 hex_representation = convert_to_hex(file_path)
 
-# Create the hex file in the same directory
-output_file = file_path.replace('.dat', '.hex')
-save_hex_to_file(hex_representation, output_file)
+# Print the hex data
+print(hex_representation)
 
-# Read the hex data from the .hex file
-with open("game_save6.hex", "r") as f:
-    hex_data = f.read().strip()
-
-# Remove the last two bytes (4 hex characters)
-
+# Use the hex data directly without saving to a file
+hex_data = hex_representation.strip()
 
 # Convert the remaining hex data back to binary (bytes)
 binary_data = bytes.fromhex(hex_data)
