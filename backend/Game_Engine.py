@@ -290,6 +290,7 @@ class GameEngine:
         if filename is None:
             for i in range(10):  # Limit to 10 auto-saves
                 filename = f"../assets/annex/game_save{i}.dat"
+                filename1 = f"../assets/annex/game_save{i}.txt"
                 if not os.path.exists(filename):  # Check if the file exists
                     break
             else:
