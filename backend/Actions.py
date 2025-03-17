@@ -7,7 +7,7 @@ from frontend.Terrain import *
 from logger import debug_print
 from Units import *
 from Building import *
-
+from Data import *
 
 class Action:
     def __init__(self, game_map):
@@ -282,6 +282,7 @@ class Action:
                     # Update unit's position by calling move_unit
                     self.move_unit(unit, free_tile[0], free_tile[1], current_time_called)
                     unit.task = "marching"
+                    send_unit_info_as_packet(unit)
                     return True
                 else:
                     self.debug_print("No free tile found around the resource.", 'Yellow')
@@ -289,6 +290,7 @@ class Action:
 
             if any(abs(unit.position[0] - tile[0]) < 0.1 and abs(unit.position[1] - tile[1]) < 0.1 for tile in adjacent_tiles):
                 unit.task = "gathering"
+                send_unit_info_as_packet(unit)
                 self._gather(unit, resource_type, current_time_called)
                 return True
 
@@ -309,9 +311,11 @@ class Action:
                 # Update unit's position by calling move_unit
                 self.move_unit(unit, unit.target_resource[0], unit.target_resource[1], current_time_called)
                 unit.task = "marching"
+                send_unit_info_as_packet(unit)
                 return True
             else:
                 unit.task = "gathering"
+                send_unit_info_as_packet(unit)
                 if hasattr(unit, 'last_gather_time'):
                     del unit.last_gather_time
                 if hasattr(unit, 'path'):
@@ -369,10 +373,12 @@ class Action:
             # No resource found; start returning resources if carrying any
             if unit.carrying[resource_type] > 0:
                 unit.task = "returning"
+                send_unit_info_as_packet(unit)
         
         # Check if unit's carrying capacity is full or if it needs to return due to lack of resource
         if unit.carrying[resource_type] >= unit.carry_capacity or unit.task == "returning":
             unit.task = "returning"
+            send_unit_info_as_packet(unit)
             # Locate the nearest drop-off location (Town Center or Camp)
             if resource_type == "Food" and tile.building:
                 tile.building.is_farmed = False
