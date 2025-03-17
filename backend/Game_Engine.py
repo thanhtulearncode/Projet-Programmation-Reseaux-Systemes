@@ -317,6 +317,11 @@ class GameEngine:
                 }
                 pickle.dump(game_state, f)
             self.debug_print(f"Game saved to {filename}.")
+            # Save the game state to a text file
+            with open(filename, "rb") as dat_file:
+                data = pickle.load(dat_file)
+            with open(filename1, "w", encoding="utf-8") as txt_file:
+                txt_file.write(str(data))  
         except Exception as e:
             self.debug_print(f"Error saving game: {e}")
 
