@@ -820,7 +820,7 @@ def start_menu(save_file=None):
                     map_size=map_size,
                     players=players,
                     sauvegarde=False
-                ).run(stdscr))
+                ).run_multi_player(stdscr, 2))
             else:
                 # If player settings menu was closed, return to main menu
                 return start_menu(save_file)
@@ -866,4 +866,4 @@ def start_game(stdscr, save_file=None):
             sauvegarde=False
         )
 
-    game_engine.run(stdscr)
+    game_engine.run_multi_player(stdscr, 2)

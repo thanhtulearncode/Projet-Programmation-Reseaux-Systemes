@@ -1,156 +1,84 @@
-import pickle #on peut utiliser json 
-import socket
-from backend import Game_Engine
-import csv
-"""
-def send_unit_info_as_packet(unit, server_address):
-    if unit.task:
-        unit_info = {
-            'player': unit.player.id,
-            'position': unit.position,
-            'task': unit.task,
-            'target_resource': unit.target_resource,
-            'target_position': unit.target_position,
-            'carrying': unit.carrying,
-            'direction': unit.direction,
-            'is_moving': unit.is_moving,
-            'last_gather_time': getattr(unit, 'last_gather_time', None),
-            'last_move_time': getattr(unit, 'last_move_time', None),
-            'path': getattr(unit, 'path', None),
-            'target_attack': getattr(unit, 'target_attack', None),
-            'last_hit_time': getattr(unit, 'last_hit_time', None),
-            'construction_type': getattr(unit, 'construction_type', None),
-            'target_building': getattr(unit, 'target_building', None),
-            'start_building': getattr(unit, 'start_building', None)
+class PacketManager:
+    """
+    A singleton class to handle the creation, sending, and receiving of packets
+    for network communication in the game.
+    """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(PacketManager, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self, this_player=None):
+        if not hasattr(self, "initialized"):
+            self.this_player = this_player
+            self.initialized = True
+
+    #def create_packet(self, player_id, update_type, object_id, position=None, additional_data=None):
+    def create_packet(self, object, update_type, amount = 0):
+        pass
+        """
+        Creates a packet with the given information.
+
+        Args:
+            player_id (int): The ID of the player.
+            update_type (str): The type of update (e.g., "move_unit", "attack_unit").
+            object_id (int): The ID of the object (unit or building).
+            position (tuple, optional): The position of the object (x, y).
+            additional_data (dict, optional): Any additional data to include in the packet.
+
+        Returns:
+            dict: A dictionary representing the packet.
+        packet = {
+            "player_id": player_id,
+            "update_type": update_type,
+            "object_id": object_id,
+            "position": position,
+            "additional_data": additional_data,
         }
-        packet = pickle.dumps(unit_info)
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect(server_address)
-            s.sendall(packet)
-        print(f"Unit information sent to server at {server_address}")
-    else:
-        print("Unit task is empty, no information sent.")
-"""
-# Test (parce qu'il n'y a pas de serveur)
-def send_unit_info_as_packet(unit):
-    if unit.task:
-        unit_info = {
-            'player_id' : unit.player.id,
-            'unit_name': unit.name, #chỉ có mỗi dân làng mới có name nên ta có thể thêm thuộc tính (id) để xác minh unit?
-            'position': unit.position,
-            'task': unit.task,
-            'target_resource': unit.target_resource,
-            'target_position': unit.target_position,
-            'carrying': unit.carrying,
-            'direction': unit.direction,
-            'is_moving': unit.is_moving,
-            'last_gather_time': getattr(unit, 'last_gather_time', None),
-            'last_move_time': getattr(unit, 'last_move_time', None),
-            'path': getattr(unit, 'path', None),
-            'target_attack': getattr(unit, 'target_attack', None),
-            'last_hit_time': getattr(unit, 'last_hit_time', None),
-            'construction_type': getattr(unit, 'construction_type', None),
-            'target_building': getattr(unit, 'target_building', None),
-            'start_building': getattr(unit, 'start_building', None)
-        }
-        #packet = pickle.dumps(unit_info)
-        #print(packet)
-        print(unit_info)
+        return packet
+        """
 
-def process_received_packet(packet): #chưa xong
-    unit_info = pickle.loads(packet.decode('utf-8'))
-    player_id = unit_info.get('player_id')
-    unit_name = unit_info.get('unit_name')
-    for player in Game_Engine.game_data.players:
-        if player.id == player_id:
-            for unit in player.units:
-                if unit.name == unit_name:
-                    unit.position = unit_info.get('position')
-                    unit.task = unit_info.get('task')
-                    unit.target_resource = unit_info.get('target_resource')
-                    unit.target_position = unit_info.get('target_position')
-                    unit.carrying = unit_info.get('carrying')
-                    unit.direction = unit_info.get('direction')
-                    unit.is_moving = unit_info.get('is_moving')
-                    unit.last_gather_time = unit_info.get('last_gather_time')
-                    unit.last_move_time = unit_info.get('last_move_time')
-                    unit.path = unit_info.get('path')
-                    unit.target_attack = unit_info.get('target_attack')
-                    unit.last_hit_time = unit_info.get('last_hit_time')
-                    unit.construction_type = unit_info.get('construction_type')
-                    unit.target_building = unit_info.get('target_building')
-                    unit.start_building = unit_info.get('start_building')
-                    print("Unit information updated from received packet.")
-class Packet:
-    def __init__(self, this_player):
-        self.this_player = this_player
-        self.package = None
-    def send_packet(self, server_address):
-        pass
-    def receive_packet(self):
-        pass
-    def create_packet(self,object, update_type, amount=0, attaked_by=None):
-        start_x = object.position[0]
-        start_y = object.position[1]
-        package_header = f"{self.this_player.id};{update_type};{object.id};{start_x};{start_y}"
-        match(update_type):
-            case "place_unit":
-                self.package=package_header
-                print(package_header)
-            case "remove_unit":
-                self.package=package_header
-                print(package_header)
-            case "move_unit":
-                self.package=package_header
-                print(package_header)
-            case "place_building":
-                self.package=package_header
-                print(package_header)
-            case "remove_building":
-                self.package=package_header
-                print(package_header)
-        """ case "attacked":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'attacked_by': attaked_by.name,
-                    'amount': amount
-                }
-                print(object_info)
-            case "resource_gathered":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'amount': amount
-                }
-                print(object_info)
-            case  "food_gathered":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'amount': amount
-                }
-                print(object_info) """
-        if self.package:
-            with open("spawner_test_output.csv", mode="a", newline="") as file:
-            writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
-            writer.writerow(self.package.split(";"))
+    def send_packet(self, packet, server_address):
+        """
+        Sends a packet to the specified server address.
 
-    def process_packet(player_id)-> list:
-        pass
-    def extract_package(self, row):
-        package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
-        return package_header
-    def process_csv(self, file_name):
-        with open(file_name, mode="r") as file:
-            reader = csv.reader(file, delimiter=';')
-            next(reader)     
-            for row in reader:
-                package_header = self.extract_package(row)
-                print(package_header)
+        Args:
+            packet (dict): The packet to send.
+            server_address (tuple): The server address as (host, port).
+        """
+        import socket
+        import pickle
 
-class DataProcessor:
-    def __init__(self, game_engine: Game_Engine):
-        self.game_engine = game_engine
-    def update_data(player):
-        pass
+        try:
+            serialized_packet = pickle.dumps(packet)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(server_address)
+                s.sendall(serialized_packet)
+            print(f"Packet sent to {server_address}: {packet}")
+        except Exception as e:
+            print(f"Error sending packet: {e}")
+
+    def receive_packet(self, server_socket):
+        """
+        Receives a packet from the server socket.
+
+        Args:
+            server_socket (socket.socket): The server socket.
+
+        Returns:
+            dict: The received packet as a dictionary.
+        """
+        import pickle
+
+        try:
+            connection, _ = server_socket.accept()
+            with connection:
+                data = connection.recv(1024)
+                packet = pickle.loads(data)
+                print(f"Packet received: {packet}")
+                return packet
+        except Exception as e:
+            print(f"Error receiving packet: {e}")
+            return None
