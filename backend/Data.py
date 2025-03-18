@@ -80,3 +80,56 @@ def process_received_packet(packet): #chưa xong
                     unit.target_building = unit_info.get('target_building')
                     unit.start_building = unit_info.get('start_building')
                     print("Unit information updated from received packet.")
+class Packet:
+    def __init__(self, this_player):
+        self.this_player = this_player
+        self.package = None
+    def send_packet(self, server_address):
+        pass
+    def receive_packet(self):
+        pass
+
+    def create_packet(self,object, update_type, amount=0, attaked_by=None):
+        package_header = f"{self.this_player},update_type:{update_type},object_id:{object.id}position:{object.position}"
+        match(update_type):
+            case "place_unit":
+                print(package_header)
+            case "remove_unit":
+                print(package_header)
+            case "move_unit":
+                print(package_header)
+            case "place_building":
+                print(package_header)
+            case "remove_building":
+                print(package_header)
+        """ case "attacked":
+                object_info = {
+                    'player_id': object.player.id,
+                    'unit_name': object.name,
+                    'attacked_by': attaked_by.name,
+                    'amount': amount
+                }
+                print(object_info)
+            case "resource_gathered":
+                object_info = {
+                    'player_id': object.player.id,
+                    'unit_name': object.name,
+                    'amount': amount
+                }
+                print(object_info)
+            case  "food_gathered":
+                object_info = {
+                    'player_id': object.player.id,
+                    'unit_name': object.name,
+                    'amount': amount
+                }
+                print(object_info) """
+
+    def process_packet(player_id)-> list:
+        pass
+
+class DataProcessor:
+    def __init__(self, game_engine: Game_Engine):
+        self.game_engine = game_engine
+    def update_data(player):
+        pass

@@ -1,7 +1,7 @@
 import random
 import math
 import curses
-
+import backend.Data as Data
 from backend.Starter_File import GameMode
 
 class Map:
@@ -13,7 +13,12 @@ class Map:
         self.pre_post_entities = {"pre": {"Construct" : []}, "post": {}}
         self.buildings = []
         self.rubbles = []
+        self.id_count = dict()
         self.generate_map()
+    def set_id(self, object):
+        object.id = f"{object.player.id}.{object.symbol}"
+        self.id_count[object.id] +=1
+        object.id += f".{self.id_count[object.id]}"
 
     def generate_map(self):
         
@@ -132,11 +137,14 @@ class Map:
                         self.grid[y + j][x + i].rubble = None
                         if self.grid[y + j][x + i].rubble in self.rubbles:
                             self.rubbles.remove(self.grid[y + j][x + i].rubble)
+            self.set_id(building)
+            Data.Packet(building.player).create_packet(building, "place_building")
                         
 
     def remove_building(self, x, y, building):
         for i in range(building.size):
             for j in range(building.size):
+                Data.Packet(building.player).create_packet(building, "remove_building")
                 self.grid[y + j][x + i].building = None
                 if building.name == "Construct":
                     continue
@@ -145,16 +153,20 @@ class Map:
                     self.grid[y + j][x + i].rubble = rubble
                     if i == 0 and j == 0:
                         self.rubbles.append(rubble)
+        
     
     def place_unit(self, x, y, unit):
         if 0 <= x < self.width and 0 <= y < self.height:
             tile = self.grid[y][x]
             tile.unit.append(unit)  # Place the unit on the tile
+            self.set_id(unit)
+            Data.Packet(unit.player).create_packet(unit, "place_unit")
 
     def remove_unit(self, x, y, unit):
         tile = self.grid[y][x]
         if tile.unit is not None and unit in tile.unit:
             tile.unit.remove(unit)  # Remove the unit from the tile
+            Data.Packet(unit.player).create_packet(unit, "remove_unit")
         else:
             print(f"Terrain File : No unit on tile ({x}, {y})")
 
@@ -162,6 +174,7 @@ class Map:
         if 0 <= target_x < self.width and 0 <= target_y < self.height:
             self.remove_unit(start_x, start_y, unit)
             self.place_unit(target_x, target_y, unit)
+            Data.Packet(unit.player).create_packet(unit, "move_unit")
         else:
             print(f"Terrain File : Target ({target_x}, {target_y}) is out of bounds.")
             

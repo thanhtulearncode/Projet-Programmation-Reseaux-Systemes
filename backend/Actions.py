@@ -358,12 +358,14 @@ class Action:
                     unit.carrying[resource_type] += amount_to_gather
                     if resource_type == "Gold" or resource_type == "Wood":
                         tile.resource.amount -= amount_to_gather
+                        Data.Packet(unit.player).create_packet(tile, "resource_gathered", amount_to_gather)
                         # If resource is depleted, remove it from the map
                         if tile.resource.amount <= 0:
                             tile.resource = None
                             self.map.resources[resource_type].remove(unit.target_resource)
                     elif resource_type == "Food" and tile.building.name == "Farm":
                         tile.building.food -= amount_to_gather
+                        Data.Packet(unit.player).create_packet(tile, "food_gathered", amount_to_gather)
                         if tile.building.food <= 0:
                             Building.kill_building(unit.player, tile.building, self.map)                           
 
@@ -503,6 +505,7 @@ class Action:
                 else:
                     self.debug_print(f"{unit.name} is attacking {enemy_unit.name}...", 'Red')
                     enemy_unit.hp -= unit.attack
+                    Data.Packet(unit.player).create_packet(enemy_unit, "attacked", unit.attack, unit)
                     if isinstance(enemy_unit, Building):
                             enemy_unit.is_attacked = True
                     if not isinstance(enemy_unit, Building):
@@ -661,6 +664,7 @@ class Action:
                         Unit.kill_unit(target.player, target, game_map)
                 else:
                     target.hp -= building.attack
+                    Data.Packet(building.player).create_packet(target, "attacked", building.attack)
                     target.is_attacked = True
                     self.debug_print(f"{building.name} is attacking {target.name}...", 'Red')
                 return True

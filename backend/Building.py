@@ -25,6 +25,7 @@ class Building:
         self.nb_workers = None # Number of workers for the building --> impact building time
         self.max_hp = hp
         self.is_attacked = False
+        self.id = None
 
     def __str__(self):
         return self.symbol  # Ensure the building is represented by just the symbol

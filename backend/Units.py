@@ -25,6 +25,7 @@ class Unit:
         self.current_frame = 0  # Initialiser à 0 si absent
         self.frame_counter = 0 
         self.is_moving = False
+        self.id = None
 
     def __str__(self):
         return self.symbol  # Ensure the building is represented by just the symbol
