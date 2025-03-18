@@ -15,7 +15,9 @@ class PacketManager:
             self.this_player = this_player
             self.initialized = True
 
-    def create_packet(self, player_id, update_type, object_id, position=None, additional_data=None):
+    #def create_packet(self, player_id, update_type, object_id, position=None, additional_data=None):
+    def create_packet(self, object, update_type, amount = 0):
+        pass
         """
         Creates a packet with the given information.
 
@@ -28,7 +30,6 @@ class PacketManager:
 
         Returns:
             dict: A dictionary representing the packet.
-        """
         packet = {
             "player_id": player_id,
             "update_type": update_type,
@@ -37,6 +38,7 @@ class PacketManager:
             "additional_data": additional_data,
         }
         return packet
+        """
 
     def send_packet(self, packet, server_address):
         """

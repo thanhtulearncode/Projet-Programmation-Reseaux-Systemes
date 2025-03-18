@@ -81,7 +81,13 @@ class GameEngine:
         if not self.is_paused:
             return time.time()
         return self.current_time
-
+    
+    def get_ai_by_id(self, player_id):
+        for player in self.players:
+            if player.id == player_id:
+                return player.ai
+        return None
+    """
     def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
@@ -256,7 +262,7 @@ class GameEngine:
         finally:
             if self.gui_running:
                 self.stop_gui_thread()
-
+    """
     def check_victory(self):
         if self.turn % 500 == 0: # Check if the game is over
             active_players = [p for p in self.players if p.units or p.buildings] # Check if the player has units and buildings
@@ -345,13 +351,13 @@ class GameEngine:
         except Exception as e:
             self.debug_print(f"Error loading game: {e}")
 
-    def run_multi_player(self, stdscr, this_player):
+    def run_multi_player(self, stdscr, this_player_id):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
         viewport_width, viewport_height = 30, 30
         # Display the initial viewport
         stdscr.clear()  # Clear the screen
-        processor=Data.DataProcessor(self)
+        processor = DataProcessor(self)
         if self.terminalon :
             self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
 
@@ -461,14 +467,14 @@ class GameEngine:
 
                 #call the IA
                 if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
-                    ia = this_player.ai
+                    ia = self.get_ai_by_id(this_player_id)
                     ia.current_time_called = self.get_current_time()  # Update the current time for each IA
                     ia.run()  # Run the AI logic for each player
                     
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
                     for player in self.players:
-                        if player.id == self.this_player.id:
+                        if player.id == this_player_id:
                             for unit in player.units:
                                 if unit.task == "going_to_battle":
                                     action.go_battle(unit, unit.target_attack, self.get_current_time())
@@ -500,7 +506,8 @@ class GameEngine:
                                     else: 
                                         building.target = None
                         else:
-                            processor.update_data(player)
+                            pass
+                            #processor.update_data(player)
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()
                 if self.terminalon :

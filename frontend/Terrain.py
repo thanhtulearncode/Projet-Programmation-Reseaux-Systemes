@@ -13,12 +13,13 @@ class Map:
         self.pre_post_entities = {"pre": {"Construct" : []}, "post": {}}
         self.buildings = []
         self.rubbles = []
-        self.id_count = dict()
+        self.id_count = 0
         self.generate_map()
+
     def set_id(self, object):
         object.id = f"{object.player.id}.{object.symbol}"
-        self.id_count[object.id] +=1
-        object.id += f".{self.id_count[object.id]}"
+        self.id_count +=1
+        object.id += f".{self.id_count}"
 
     def generate_map(self):
         
