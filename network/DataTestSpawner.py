@@ -1,6 +1,3 @@
-from backend.Units import Unit
-import Data
-
 import random
 
 def spawner_test():
@@ -14,5 +11,5 @@ def spawner_test():
     object_position = (start_x, start_y)
     
     package_header = f"{random.randint(0, 10)},update_type:{update_type},object_id:{object_id}position:{object_position}"
-    print(package_header)
+    return package_header
 
