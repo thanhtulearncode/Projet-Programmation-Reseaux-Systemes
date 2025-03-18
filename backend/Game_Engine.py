@@ -87,6 +87,13 @@ class GameEngine:
             if player.id == player_id:
                 return player.ai
         return None
+    
+    def get_player_by_id(self, player_id):
+        for player in self.players:
+            if player.id == player_id:
+                return player
+        return None
+    
     """
     def run(self, stdscr):
         # Initialize the starting view position
@@ -269,7 +276,41 @@ class GameEngine:
             return len(active_players) == 1 # Check if there is only one player left
         else:
             return False
-
+    def update_map(self, packet):
+        elements = packet.split(";")
+        player_id, update_type, object_id, start_x, start_y = elements
+        start_x, start_y = int(start_x), int(start_y)
+        player_id = int(player_id)
+        t = object_id.split(".")
+        symbol = t[1]
+        player = self.get_player_by_id(player_id)
+        if update_type == "place_unit":
+            #unit_class = Unit.get_unit_by_symbol(symbol)
+            #Unit.spawn_unit(unit_class, start_x, start_y, player, self.map)
+            #unit = player.units[-1]
+            for unit in player.units:
+                if unit.id == object_id:
+                    break
+            self.map.place_unit(start_x, start_y, unit)
+        elif update_type == "remove_unit":
+            for unit in player.units:
+                if unit.id == object_id:
+                    break
+            self.map.remove_unit(start_x,start_y, unit)
+        elif update_type == "move_unit":
+            for unit in player.units:
+                if unit.id == object_id:
+                    break
+            self.map.move_unit(unit, start_x, start_y, unit.position[0], unit.position[1])
+        elif update_type == "place_building":
+            building_class = Building.get_building_by_symbol(symbol)
+            building = Building.spawn_building(building_class, start_x, start_y, player, self.map)
+            self.map.place_building(start_x, start_y, building)
+        elif update_type == "remove_building":
+            for building in player.buildings:
+                if building.id == object_id:
+                    break
+            Building.kill_building(player, building, self.map)
     #condition de victoire: être le dernier joueur avec des bâtiments
     def victory():
     
@@ -391,27 +432,23 @@ class GameEngine:
                     top_left_x = min(self.map.width - viewport_width, top_left_x + 5)
 
                 ###### TEST KEYS #######
-
                 elif key == ord('r'):
-                    self.debug_print(self.players[0].buildings[0].position)
-                    self.debug_print(action.get_adjacent_positions(self.players[0].buildings[0].position[0], self.players[0].buildings[0].position[1], self.players[0].buildings[0].size))
-                elif key == ord('o'):
-                    self.terminalon = not self.terminalon   
-                elif key == ord('i'):
-                    action.construct_building(self.players[2].units[1], Keep, 10, 10, self.players[2], self.get_current_time())
-                    action.move_unit(self.players[1].units[1],15,15,self.get_current_time())
-                elif key == ord('u'):
-                    Building.kill_building(self.players[0], self.players[0].buildings[0], self.map)
-                elif key == ord('y'):
-                    Building.kill_building(self.players[0], self.players[0].buildings[-1], self.map)
+                    self.update_map("1;place_unit;1.v.6;1;1")
                 elif key == ord('t'):
-                    self.players[0].owned_resources["Wood"] = 100
+                    self.update_map("1;remove_unit;1.v.6;1;1")
+                elif key == ord('y'):
+                    self.update_map("1;place_unit;1.v.6;1;2")
+                elif key == ord('u'):
+                    self.update_map("1;remove_unit;1.v.6;1;2")
+                elif key == ord('i'):
+                    self.update_map("1;place_unit;1.v.6;1;3")
+                elif key == ord('o'):
+                    self.update_map("1;remove_unit;1.v.6;1;3")
 
 
                 #########################
 
                 ###### CHEAT KEYS #######
-
                 elif key == ord('g'):
                     self.players[0].owned_resources["Gold"] += 5000
                 elif key == ord('w'):
@@ -463,7 +500,7 @@ class GameEngine:
                         latest_save_path = os.path.join(save_dir, latest_save_file)
                         self.load_game(latest_save_path)
                     else:
-                        self.debug_print("No save files found.")
+                        self.debug_print("No save files found.") 
 
                 #call the IA
                 if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag

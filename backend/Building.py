@@ -106,6 +106,24 @@ class Building:
         else:
             debug_print(f"Building {building_to_kill} does not belong to {player.name}.", 'Yellow')
 
+    def get_building_by_symbol(self, symbol):
+        if symbol == 'T':
+            return TownCenter
+        elif symbol == 'H':
+            return House
+        elif symbol == 'C':
+            return Camp
+        elif symbol == 'F':
+            return Farm
+        elif symbol == 'B':
+            return Barracks
+        elif symbol == 'S':
+            return Stable
+        elif symbol == 'A':
+            return ArcheryRange
+        elif symbol == 'K':
+            return Keep
+        return None
 
 # TownCenter Class
 class TownCenter(Building):

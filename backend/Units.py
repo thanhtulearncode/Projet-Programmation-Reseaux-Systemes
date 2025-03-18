@@ -36,6 +36,17 @@ class Unit:
     def update(self):
         pass
 
+    def get_unit_by_symbol(symbol):
+        if symbol == "v":
+            return Villager
+        elif symbol == "s":
+            return Swordsman
+        elif symbol == "h":
+            return Horseman
+        elif symbol == "a":
+            return Archer
+        else:
+            return None
     @classmethod
     def place_starting_units(cls, players, game_map):
         for player in players:
@@ -113,7 +124,6 @@ class Unit:
         else:
             debug_print(f"Cannot place unit at ({x}, {y}): invalid position or population limit reached.", 'Yellow')
             return None
-
         
     @classmethod
     def train_unit(cls, unit_to_train, x, y, player, building, game_map, current_time_called):
