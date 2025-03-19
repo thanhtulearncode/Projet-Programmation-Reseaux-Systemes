@@ -1,66 +1,55 @@
 import socket
-import os
+import select
+import sys
 
 BUF = 512
-SERVER_IP = "127.0.0.1"
-SERVER_PORT = 8083  
-
-def send_file(client_socket, file_path, server_address):
-    try:
-        with open(file_path, 'rb') as file:
-            while True:
-                data = file.read(BUF)
-                if not data:
-                    break
-                client_socket.sendto(data, server_address)
-        print(f"Tệp '{file_path}' đã được gửi thành công.")
-    except Exception as e:
-        print(f"Không thể gửi tệp: {e}")
-
+SERVER_PORT = 8083  # Port fixe pour communiquer avec le serveur
+SERVER_IP="127.0.0.1"
 def main():
+
     try:
+        # Créer un socket UDP
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        print("Client UDP đã sẵn sàng. Bạn có thể gửi tin nhắn hoặc tệp.")
+        print(f"Client UDP prêt. Connecté au serveur {SERVER_IP}:{SERVER_PORT}.")
     except socket.error as e:
         print(f"Erreur lors de la création du socket : {e}")
         exit(1)
 
+    # Envoyer une demande de connexion au serveur
+    try:
+        connect_message = "CONNECT"
+        client_socket.sendto(connect_message.encode(), (SERVER_IP, SERVER_PORT))
+        print(f"Demande de connexion envoyée au serveur : {connect_message}")
+    except Exception as e:
+        print(f"Erreur lors de l'envoi de la demande de connexion : {e}")
+        client_socket.close()
+        exit(1)
+
     while True:
-        print("\nLựa chọn:")
-        print("1. Gửi tin nhắn")
-        print("2. Gửi tệp")
-        print("3. Thoát")
-        choice = input("Chọn 1, 2 hoặc 3: ")
+        # Utiliser select pour surveiller l'entrée utilisateur et les messages du serveur
+        readable, _, _ = select.select([sys.stdin, client_socket], [], [])
 
-        if choice == '1':
-            message = input("Nhập tin nhắn để gửi: ")
-            if message.lower() == "exit":
-                print("Đóng kết nối...")
-                break
-            client_socket.sendto(message.encode(), (SERVER_IP, SERVER_PORT))
-            print(f"Tin nhắn gửi tới Server UDP1: {message}")
-            try:
-                client_socket.settimeout(2)  # Timeout 2s để tránh block
-                response, _ = client_socket.recvfrom(BUF)
-                print(f"Phản hồi từ Server UDP1: {response.decode()}")
-            except socket.timeout:
-                print("Không nhận được phản hồi từ Server UDP1.")
-        
-        elif choice == '2':
-            file_path = input("Nhập đường dẫn tệp văn bản để gửi: ")
-            if os.path.isfile(file_path):
-                client_socket.sendto(b"FILE", (SERVER_IP, SERVER_PORT))  # Gửi tín hiệu gửi tệp
-                send_file(client_socket, file_path, (SERVER_IP, SERVER_PORT))
-            else:
-                print("Tệp không tồn tại. Thử lại.")
-        
-        elif choice == '3':
-            print("Đóng kết nối...")
-            break
-        else:
-            print("Lựa chọn không hợp lệ. Vui lòng thử lại.")
-    
-    client_socket.close()
+        for sock in readable:
+            if sock == sys.stdin:
+                # Lire l'entrée utilisateur pour envoyer un message
+                message = input()
+                if message.lower() == "exit":
+                    print("Fermeture de la connexion...")
+                    client_socket.close()
+                    exit(0)
+                client_socket.sendto(message.encode(), (SERVER_IP, SERVER_PORT))
+                print(f"Message envoyé au serveur : {message}")
+            elif sock == client_socket:
+                # Recevoir un message du serveur
+                data, addr = client_socket.recvfrom(BUF)
+                received_message = data.decode()
 
-if __name__ == "__main__":
+                # Vérifier si le message reçu est une confirmation de connexion
+                if received_message == "Connexion acceptée par le serveur. Vous pouvez maintenant envoyer des messages.":
+                    print("Message du serveur : Connexion acceptée. Vous pouvez maintenant envoyer des messages.")
+                else:
+                    # Afficher les messages normaux reçus d'autres clients
+                    print(f"Message reçu de autre client : {received_message}")
+
+if __name__ == "__main__": 
     main()
