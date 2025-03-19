@@ -12,7 +12,8 @@ from Units import *
 from Building import *
 from Actions import *
 from frontend.Terrain import Map
-from Data import *
+from network.Data import *
+from network.DataProcessor import DataProcessor
 try:
     from frontend import gui
     USE_PYGAME = True

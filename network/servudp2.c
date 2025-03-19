@@ -2,15 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <fcntl.h>
-#include <netdb.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 #define BUF 512
 #define PORT_UDP2 "8085"
+#define PORT_CLIENT "8087"
 #define FILE_DIR "./received_files/"  // Thư mục lưu trữ tệp
 
 void stop(char* msg) {
@@ -47,58 +50,105 @@ void save_file(int sockfd, struct sockaddr_in *udp1_addr, socklen_t udp1_len) {
     close(file_fd);
 }
 
-int main( int argc, char* argv[] ) {
-    int sockfd, n;
-    char buffer[BUF];
-    struct sockaddr_in udp1_addr;
-    struct addrinfo hints, *udp1_info;
-    socklen_t udp1_len = sizeof(udp1_addr);
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET; 
-    hints.ai_socktype = SOCK_DGRAM;
-    if (getaddrinfo(argv[1], PORT_UDP2, &hints, &udp1_info) != 0)
-        stop("Erreur de configuration de l'adresse du serveur UDP1");
-
-    // Création du socket UDP sans bind
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-        stop("Erreur de création du socket");
-
-    memset(&udp1_addr, 0, sizeof(udp1_addr));
-    udp1_addr = *(struct sockaddr_in*)udp1_info->ai_addr;
-    //udp1_addr.sin_family = AF_INET;
-    //udp1_addr.sin_port = htons(PORT_UDP2);
-    //if(inet_aton(argv[1], &udp1_addr.sin_addr) == 0)
-	//	printf("inet_aton server failed\n");
-
-    // Envoyer la demande de connexion à UDP1
-    snprintf(buffer, BUF, "Demande de connexion de UDP2");
-    printf("Envoi de la demande de connexion à Serveur UDP1...\n");
-    if (sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&udp1_addr, udp1_len) < 0)
-        stop("Erreur d'envoi de la demande de connexion à UDP1");
-
-    printf("Demande de connexion envoyée à UDP1.\n");
-    // Xử lý dữ liệu từ client (tệp hoặc tin nhắn)
-    while (1) {
-        memset(buffer, 0, BUF);
-        n = recvfrom(sockfd, buffer, BUF, 0, (struct sockaddr*)&udp1_addr, &udp1_len);
-        if (n < 0) {
-            perror("Erreur de réception");
-        } else {
-            if (strncmp(buffer, "FILE", 4) == 0) {
-                // Nhận tệp từ udp1
-                printf("Le UDP 1 envoie un fichier...\n");
-                save_file(sockfd, &udp1_addr, udp1_len);
-            } else {
-                printf("Message reçu de UDP1 : %s\n", buffer);
-                // Répondre à UDP1
-                snprintf(buffer, BUF, "le message reçu et traité par UDP2");
-                if (sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&udp1_addr, udp1_len) < 0)
-                    perror("Erreur d'envoi de la réponse à UDP1");
-
-            }
-        }
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <UDP1 IP>\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
 
-    close(sockfd);
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        stop("WSAStartup failed");
+    }
+
+    SOCKET udp1_sockfd, client_sockfd;
+    int n;
+    char buffer[BUF];
+    struct sockaddr_in udp1_addr, client_addr;
+    struct addrinfo hints, *udp1_info;
+    int udp1_len = sizeof(udp1_addr);
+    int client_len = sizeof(client_addr);
+
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
+
+    if (getaddrinfo(argv[1], PORT_UDP2, &hints, &udp1_info) != 0) {
+        stop("Error setting server UDP1 address");
+    }
+
+    // Create UDP socket
+    if ((udp1_sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
+        stop("Socket UDP creation failed");
+    }
+    if ((client_sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
+        stop("Socket client creation failed");
+    }
+    memset(&udp1_addr, 0, sizeof(udp1_addr));
+    memcpy(&udp1_addr, udp1_info->ai_addr, sizeof(struct sockaddr_in));
+    freeaddrinfo(udp1_info);
+
+    memset(&client_addr, 0, sizeof(client_addr));
+    client_addr.sin_family = AF_INET;
+    client_addr.sin_addr.s_addr = INADDR_ANY;
+    client_addr.sin_port = htons(atoi(PORT_CLIENT));
+
+    if (bind(client_sockfd, (struct sockaddr*)&client_addr, client_len) == SOCKET_ERROR) {
+        stop("Bind failed for client");
+    }
+
+    // Send connection request to UDP1
+    snprintf(buffer, BUF, "Connection request from UDP2");
+    printf("Sending connection request to UDP1...\n");
+
+    if (sendto(udp1_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&udp1_addr, udp1_len) == SOCKET_ERROR) {
+        stop("Error sending connection request to UDP1");
+    }
+
+    printf("Connection request sent to UDP1.\n");
+
+    fd_set readfds;
+    int max_fd = (client_sockfd > udp1_sockfd) ? client_sockfd : udp1_sockfd;
+
+    while (1) {
+        FD_ZERO(&readfds);
+        FD_SET(client_sockfd, &readfds);
+        FD_SET(udp1_sockfd, &readfds);
+
+        if (select(max_fd + 1, &readfds, NULL, NULL, NULL) == SOCKET_ERROR) {
+            stop("Select error");
+        }
+        // Receive message from client
+        if (FD_ISSET(client_sockfd, &readfds)) {
+            memset(buffer, 0, BUF);
+            n = recvfrom(client_sockfd, buffer, BUF, 0, (struct sockaddr*)&client_addr, &client_len);
+            if (n == SOCKET_ERROR) {
+                printf("Receive error: %d\n", WSAGetLastError());
+                continue;
+            } else printf("Message received from client: %s\n", buffer);
+            if (sendto(udp1_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&udp1_addr, udp1_len) == SOCKET_ERROR) {
+                printf("Send error: %d\n", WSAGetLastError());
+                continue;
+            } else printf("Message successfully sent to UDP1.\n");
+        }
+        // Receive message from UDP1
+        if (FD_ISSET(udp1_sockfd, &readfds)) {
+            memset(buffer, 0, BUF);
+            n = recvfrom(udp1_sockfd, buffer, BUF, 0, (struct sockaddr*)&udp1_addr, &udp1_len);
+            if (n == SOCKET_ERROR) {
+                printf("Receive error: %d\n", WSAGetLastError());
+                continue;
+            } else printf("Message received from UDP1: %s\n", buffer);
+            if (sendto(client_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&client_addr, client_len) == SOCKET_ERROR) {
+                printf("Send error: %d\n", WSAGetLastError());
+                continue;
+            } else printf("Message successfully sent to client.\n");
+        }
+    }
+    closesocket(udp1_sockfd);
+    closesocket(client_sockfd);
+    WSACleanup();
     return 0;
 }
