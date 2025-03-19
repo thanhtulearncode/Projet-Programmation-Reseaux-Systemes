@@ -47,7 +47,6 @@ class PacketManager:
                 writer.writerow(self.package.strip().split(";"))
                 
     @staticmethod
-    @staticmethod
     def process_packet(data) -> list:
         result = []
         items = data.split('*')

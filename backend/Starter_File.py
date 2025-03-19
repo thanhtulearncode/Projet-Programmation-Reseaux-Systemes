@@ -40,11 +40,12 @@ class StartMenu:
         self.background_image = pygame.transform.scale(self.background_image, (screen_width, screen_height))
         # Adapter l'image à la taille de l'écran
 
-        # Adjusted button positions for 3 buttons
+        # Fix button positions for 4 buttons
         self.buttons = [
-            {'text': 'Start Game', 'rect': pygame.Rect(300, 250, 200    , 50)},
-            {'text': 'Load Game', 'rect': pygame.Rect(300, 320, 200, 50)},
-            {'text': 'Exit', 'rect': pygame.Rect(300, 390, 200, 50)}
+            {'text': 'Start Game', 'rect': pygame.Rect(300, 250, 200, 50)},
+            {'text': 'Multiplayer', 'rect': pygame.Rect(300, 320, 200, 50)},
+            {'text': 'Load Game', 'rect': pygame.Rect(300, 390, 200, 50)},
+            {'text': 'Exit', 'rect': pygame.Rect(300, 460, 200, 50)}
         ]
         self.font = pygame.font.Font(None, 48)
         
@@ -774,34 +775,29 @@ class PlayerSettingsMenu:
 def start_menu(save_file=None):
     menu = StartMenu()
     action = menu.run()
+    global GameMode, map_size, players
     
-    if action == 'Start Game':
+    # Handle Start Game and Multiplayer the same way
+    if action in ['Start Game', 'Multiplayer']:
         settings_menu = GameSettingsMenu()
         settings = settings_menu.run()
         
         if settings == 'back':
             return start_menu(save_file)
         elif settings:
-            # Import GameEngine at the start
             from Game_Engine import GameEngine
             
-            # Update global settings
-            global GameMode, map_size, players
             GameMode = settings['mode']
             map_size = settings['map_size']
             num_players = int(settings['num_players'])
-            ### Multiplayer settings
             multi_player = True
             synchonised = True
-            # Clear existing players list
             players.clear()
             
-            # Show player settings menu
             player_settings_menu = PlayerSettingsMenu(num_players)
             player_settings = player_settings_menu.run()
             
             if player_settings:
-                # Create players with selected settings
                 for i, settings in enumerate(player_settings):
                     player_id = i + 1
                     new_player = Player(
@@ -812,10 +808,8 @@ def start_menu(save_file=None):
                     )
                     players.append(new_player)
                 
-                # Close pygame before starting curses
                 pygame.quit()
                 if multi_player:
-                    # Start the game with updated players list
                     if synchonised:
                         game_engine = GameEngine(
                             game_mode=GameMode,
@@ -825,20 +819,12 @@ def start_menu(save_file=None):
                     else:
                         DataProcessor(game_engine).initiate_sync()
                     curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
-                else:
-                    # Start the game with updated players list
-                    curses.wrapper(lambda stdscr: GameEngine(
-                        game_mode=GameMode,
-                        map_size=map_size,
-                        players=players,
-                        sauvegarde=False
-                    ).run(stdscr))
             else:
-                # If player settings menu was closed, return to main menu
                 return start_menu(save_file)
         else:
             pygame.quit()
             sys.exit()
+            
     elif action == 'Load Game' and menu.has_saves:
         load_menu = LoadGameMenu()
         selected_save = load_menu.run()
