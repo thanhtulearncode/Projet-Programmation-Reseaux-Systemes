@@ -13,9 +13,6 @@ class packet:
             case "remove_unit":
                 self.package=package_header
                 print(package_header)
-            case "move_unit":
-                self.package=package_header
-                print(package_header)
             case "place_building":
                 self.package=package_header
                 print(package_header)
@@ -63,3 +60,10 @@ class packet:
             for row in reader:
                 package_header = self.extract_package(row)
                 print(package_header)
+    
+    def send_packet(self, package):
+        pass
+
+    def receive_packet(self):
+        pass
+

@@ -26,7 +26,18 @@ from IA import IA
 
 # GameEngine Class
 class GameEngine:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(GameEngine, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, game_mode, map_size, players, sauvegarde=False):
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+        self._initialized = True
+
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -94,7 +105,7 @@ class GameEngine:
                 return player
         return None
     
-    """
+    
     def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
@@ -269,7 +280,7 @@ class GameEngine:
         finally:
             if self.gui_running:
                 self.stop_gui_thread()
-    """
+    
     def check_victory(self):
         if self.turn % 500 == 0: # Check if the game is over
             active_players = [p for p in self.players if p.units or p.buildings] # Check if the player has units and buildings
