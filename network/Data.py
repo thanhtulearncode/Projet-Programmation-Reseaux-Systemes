@@ -14,8 +14,13 @@ class PacketManager:
                 self.package+=f"{package_header}\n"
                 #print(package_header)
             case "remove_unit":
+<<<<<<< HEAD
                 self.package+=f"{package_header}\n"
                 #print(package_header)
+=======
+                self.package=package_header
+                print(package_header)
+>>>>>>> 3c6c68a7f330aff75c4d2e693083b9c7d703ca16
             case "place_building":
                 self.package+=f"{package_header}\n"
                 #print(package_header)
@@ -63,3 +68,10 @@ class PacketManager:
             for row in reader:
                 package_header = self.extract_package(row)
                 print(package_header)
+    
+    def send_packet(self, package):
+        pass
+
+    def receive_packet(self):
+        pass
+
