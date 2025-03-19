@@ -1,3 +1,4 @@
+from Data import PacketManager
 class DataProcessor:
     _instance = None
 
@@ -31,11 +32,17 @@ class DataProcessor:
         """
         pass
 
-    def update_data(self):
-        pass
+    def update_data(self, player,game_engine):
+        packet =PacketManager().receive_packet()
+        PacketManager().process_packet(packet)
+        for row in packet:
+            if row[0] != str(player.id):
+                continue
+            match row[1]:
+                case "place_unit"| "remove_unit" | "place_building" | "remove_building":
+                    game_engine().update_map(row)
+
 
     def setup_engine(self):
         pass
         ### GameEngine()
-
-    
