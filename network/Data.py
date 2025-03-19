@@ -69,10 +69,11 @@ class PacketManager:
                 package_header = self.extract_package(row)
                 print(package_header)
                 
-    def send_packet(self, package):
+    #send self.package to the server
+    def send_packet(self):
         pass
         
-    def receive_packet(self):
+    def receive_packet(self)-> str:
         pass
 
 print(PacketManager.process_packet('2;remove_unit;2.v.515;31.2;109.717*2;place_unit;2.v.516;31.28;109.7*2;remove_unit;2.v.516;31.56;109.43*2;place_unit;2.v.517;31.56476911874513;109.43523088125487*2;remove_unit;2.v.517;31.85568622330503;109.14431377669497'))

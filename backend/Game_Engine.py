@@ -297,10 +297,10 @@ class GameEngine:
         t = object_id.split(".")
         symbol = t[1]
         player = self.get_player_by_id(player_id)
+        if update_type == "spawn_unit":
+            unit_class = Unit.get_unit_by_symbol(symbol)
+            Unit.spawn_unit(unit_class, start_x, start_y, player, self.map)
         if update_type == "place_unit":
-            #unit_class = Unit.get_unit_by_symbol(symbol)
-            #Unit.spawn_unit(unit_class, start_x, start_y, player, self.map)
-            #unit = player.units[-1]
             for unit in player.units:
                 if unit.id == object_id:
                     break
@@ -315,9 +315,10 @@ class GameEngine:
                 if unit.id == object_id:
                     break
             self.map.move_unit(unit, start_x, start_y, unit.position[0], unit.position[1])
-        elif update_type == "place_building":
+        elif update_type == "spawn_building":
             building_class = Building.get_building_by_symbol(symbol)
-            building = Building.spawn_building(building_class, start_x, start_y, player, self.map)
+            Building.spawn_building(building_class, start_x, start_y, player, self.map)
+        elif update_type == "place_building":
             self.map.place_building(start_x, start_y, building)
         elif update_type == "remove_building":
             for building in player.buildings:
