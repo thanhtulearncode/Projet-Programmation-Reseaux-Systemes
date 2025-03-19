@@ -1,4 +1,5 @@
 from Data import PacketManager
+
 class DataProcessor:
     _instance = None
 
