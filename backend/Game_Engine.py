@@ -12,7 +12,8 @@ from Units import *
 from Building import *
 from Actions import *
 from frontend.Terrain import Map
-from Data import *
+from network.Data import *
+from network.DataProcessor import DataProcessor
 try:
     from frontend import gui
     USE_PYGAME = True
@@ -26,7 +27,18 @@ from IA import IA
 
 # GameEngine Class
 class GameEngine:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(GameEngine, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, game_mode, map_size, players, sauvegarde=False):
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+        self._initialized = True
+
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -40,6 +52,7 @@ class GameEngine:
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
         self.IA_used = False
+        self.send_data = False
 
         # Sauvegarde related attributes
         if not sauvegarde:
@@ -94,7 +107,7 @@ class GameEngine:
                 return player
         return None
     
-    """
+    
     def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
@@ -269,7 +282,7 @@ class GameEngine:
         finally:
             if self.gui_running:
                 self.stop_gui_thread()
-    """
+    
     def check_victory(self):
         if self.turn % 500 == 0: # Check if the game is over
             active_players = [p for p in self.players if p.units or p.buildings] # Check if the player has units and buildings
@@ -443,8 +456,7 @@ class GameEngine:
                 elif key == ord('i'):
                     self.update_map("1;place_unit;1.v.6;1;3")
                 elif key == ord('o'):
-                    self.update_map("1;remove_unit;1.v.6;1;3")
-
+                    self.send_data = not self.send_data
 
                 #########################
 
@@ -555,6 +567,10 @@ class GameEngine:
                     self.update_gui()
 
                 self.turn += 1
+                if self.send_data:
+                    print(self.players[1].package.package)
+                    self.players[1].package.pakage = ""
+                    print("===========================")
 
             active_players = [p for p in self.players if p.units or p.buildings]
             self.debug_print(f"Player {active_players[0].name} wins the game!", 'Magenta')

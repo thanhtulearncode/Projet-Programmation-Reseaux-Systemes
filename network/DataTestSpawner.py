@@ -9,7 +9,7 @@ def spawner_test():
     update_types = ["place_unit", "remove_unit", "move_unit", "place_building", "remove_building"]
     update_type = random.choice(update_types)
     symbols = ["v", "s", "h", "a", "T", "H", "C", "F", "B", "S", "A", "K"]
-    object_id = f"{player_id}.{random.choice(symbols)}.{random.randint(0, 100)}"
+    object_id = f"{player_id};{random.choice(symbols)};{random.randint(0, 100)}"
     object_position = f"{start_x};{start_y}"
     package_header = f"{player_id};{update_type};{object_id};{start_x};{start_y}"
     return package_header

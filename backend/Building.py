@@ -294,7 +294,7 @@ class Keep(Building):
 class Construct(Building):
     def __init__(self, player):
         super().__init__(player, "Construct", hp=1, build_time=0, cost={"Wood": 1}, size=2)
-        self.symbol = '%'
+        self.symbol = 'O'
         self.sprite = "construct"
         self.future_building = None
         self.workers = []

@@ -4,8 +4,7 @@ import sys
 import curses
 import os
 from Players import *
-
-
+from network.DataProcessor import DataProcessor
 # Game Mode
 GameMode = None # "Utopia" or "Gold Rush"
 
@@ -791,7 +790,9 @@ def start_menu(save_file=None):
             GameMode = settings['mode']
             map_size = settings['map_size']
             num_players = int(settings['num_players'])
-            
+            ### Multiplayer settings
+            multi_player = True
+            synchonised = True
             # Clear existing players list
             players.clear()
             
@@ -813,14 +814,25 @@ def start_menu(save_file=None):
                 
                 # Close pygame before starting curses
                 pygame.quit()
-                
-                # Start the game with updated players list
-                curses.wrapper(lambda stdscr: GameEngine(
-                    game_mode=GameMode,
-                    map_size=map_size,
-                    players=players,
-                    sauvegarde=False
-                ).run_multi_player(stdscr, 2))
+                if multi_player:
+                    # Start the game with updated players list
+                    if synchonised:
+                        game_engine = GameEngine(
+                            game_mode=GameMode,
+                            map_size=map_size,
+                            players=players,
+                            sauvegarde=False )
+                    else:
+                        DataProcessor(game_engine).initiate_sync()
+                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
+                else:
+                    # Start the game with updated players list
+                    curses.wrapper(lambda stdscr: GameEngine(
+                        game_mode=GameMode,
+                        map_size=map_size,
+                        players=players,
+                        sauvegarde=False
+                    ).run(stdscr))
             else:
                 # If player settings menu was closed, return to main menu
                 return start_menu(save_file)

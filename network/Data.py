@@ -1,65 +1,69 @@
 import csv
-import socket
-import pickle
-class packet:
-    def create_packet(self,object, update_type, amount=0, attaked_by=None):
+
+class PacketManager:
+    _instance = None 
+    package_header = "" 
+    _initialized = False  
+    def __new__(cls, player):
+        if cls._instance is None:
+            cls._instance = super(PacketManager, cls).__new__(cls)
+            cls._instance.player = player
+            cls._instance.package = ""
+        return cls._instance
+    
+    def __init__(self, player):
+        if not PacketManager._initialized:
+            self.player = player
+            self.package = ""
+            PacketManager._initialized = True
+        
+    def create_packet(self, object, update_type, amount=0, attacked_by=None):
         start_x = object.position[0]
         start_y = object.position[1]
-        package_header = f"{self.this_player.id};{update_type};{object.id};{start_x};{start_y}"
-        match(update_type):
-            case "place_unit":
-                self.package=package_header
-                print(package_header)
-            case "remove_unit":
-                self.package=package_header
-                print(package_header)
-            case "move_unit":
-                self.package=package_header
-                print(package_header)
-            case "place_building":
-                self.package=package_header
-                print(package_header)
-            case "remove_building":
-                self.package=package_header
-                print(package_header)
-        """ case "attacked":
+        PacketManager.package_header = f"{self.player.id};{update_type};{object.id};{start_x};{start_y}"
+        
+        match update_type:
+            case "place_unit" | "remove_unit" | "place_building" | "remove_building":
+                self.package += f"{PacketManager.package_header}\n"
+        """case "attacked":
                 object_info = {
                     'player_id': object.player.id,
                     'unit_name': object.name,
-                    'attacked_by': attaked_by.name,
+                    'attacked_by': attacked_by.name if attacked_by else None,
                     'amount': amount
                 }
                 print(object_info)
-            case "resource_gathered":
+            case "resource_gathered" | "food_gathered":
                 object_info = {
                     'player_id': object.player.id,
                     'unit_name': object.name,
                     'amount': amount
                 }
-                print(object_info)
-            case  "food_gathered":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'amount': amount
-                }
-                print(object_info) """
+                print(object_info)"""
+        
         if self.package:
             with open("spawner_test_output.csv", mode="a", newline="") as file:
-                writer= csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
-                writer.writerow(self.package.split(";"))
-
-    def process_packet(player_id)-> list:
+                writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
+                writer.writerow(self.package.strip().split(";"))
+                
+    @staticmethod
+    def process_packet(player_id) -> list:
         pass
-
+        
     def extract_package(self, row):
-        package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
-        return package_header
-    
+        PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
+        return PacketManager.package_header
+        
     def process_csv(self, file_name):
         with open(file_name, mode="r") as file:
             reader = csv.reader(file, delimiter=';')
-            next(reader)
+            next(reader, None) 
             for row in reader:
                 package_header = self.extract_package(row)
                 print(package_header)
+                
+    def send_packet(self, package):
+        pass
+        
+    def receive_packet(self):
+        pass
