@@ -703,8 +703,10 @@ class PlayerSettingsMenu:
             player_rect = player_text.get_rect(right=button['civ_rect'].left - 20, centery=y_pos + 25)
             self.screen.blit(player_text, player_rect)
             
-            # Draw civilization button
-            civ_color = self.colors['button_hover'] if button['civ_rect'].collidepoint(mouse_pos) else self.colors['button']
+            # Draw civilization button - only active for first player
+            civ_color = self.colors['button_hover'] if (i == 0 and button['civ_rect'].collidepoint(mouse_pos)) else \
+                    self.colors['button'] if i == 0 else \
+                    self.colors['disabled']
             pygame.draw.rect(self.screen, civ_color, button['civ_rect'], border_radius=5)
             civ_text = self.font.render(self.civilizations[button['civ_index']], True, self.colors['text'])
             civ_rect = civ_text.get_rect(center=button['civ_rect'].center)
@@ -712,8 +714,8 @@ class PlayerSettingsMenu:
             
             # Draw AI mode button - only active for first player
             ai_color = self.colors['button_hover'] if (i == 0 and button['ai_rect'].collidepoint(mouse_pos)) else \
-                      self.colors['button'] if i == 0 else \
-                      self.colors['disabled']
+                    self.colors['button'] if i == 0 else \
+                    self.colors['disabled']
             pygame.draw.rect(self.screen, ai_color, button['ai_rect'], border_radius=5)
             ai_text = self.font.render(self.ai_modes[button['ai_index']], True, self.colors['text'])
             ai_rect = ai_text.get_rect(center=button['ai_rect'].center)
@@ -764,18 +766,21 @@ class PlayerSettingsMenu:
                     if self.start_button['rect'].collidepoint(mouse_pos):
                         return [{'civilization': self.civilizations[button['civ_index']], 
                                 'ai_mode': self.ai_modes[self.player_buttons[0]['ai_index']]}  # All players use first player's AI mode
-                               for button in self.player_buttons]
+                                for button in self.player_buttons]
                     
                     # Handle civilization and AI mode selection
                     for i, button in enumerate(self.player_buttons):
-                        if button['civ_rect'].collidepoint(mouse_pos):
+                        if i == 0 and button['civ_rect'].collidepoint(mouse_pos):
                             button['civ_index'] = (button['civ_index'] + 1) % len(self.civilizations)
-                        # Only first player can change AI mode
+                            # Update all other players' civilization
+                            for other_button in self.player_buttons[1:]:
+                                other_button['civ_index'] = button['civ_index']
                         elif i == 0 and button['ai_rect'].collidepoint(mouse_pos):
                             button['ai_index'] = (button['ai_index'] + 1) % len(self.ai_modes)
                             # Update all other players' AI mode
                             for other_button in self.player_buttons[1:]:
                                 other_button['ai_index'] = button['ai_index']
+                                other_button['civ_index']= button['civ_index']
             
             pygame.display.flip()
 
