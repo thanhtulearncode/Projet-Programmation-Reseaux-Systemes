@@ -15,6 +15,9 @@ class PacketManager:
         if not PacketManager._initialized:
             self.player = player
             self.package = ""
+            self.socket = None
+            self.server_address = "127.0.0.1"
+            self.server_port = 8081 + self.player.id 
             PacketManager._initialized = True
         
     def create_packet(self, object, update_type, amount=0, attacked_by=None):
@@ -72,6 +75,11 @@ class PacketManager:
                 
     #send self.package to the server
     def send_packet(self):
+        try:
+            self.socket.sendto(self.package.encode(), (self.server_address, self.server_port))
+            self.package = ""
+        except Exception as e:
+            pass
         pass
         
     def receive_packet(self)-> str:
