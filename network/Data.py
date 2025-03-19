@@ -50,8 +50,6 @@ class PacketManager:
     @staticmethod
     def process_packet(data) -> list:
         result = []
-    
-    # First, split by double spaces
         items = data.split('*')
     
         for item in items:
