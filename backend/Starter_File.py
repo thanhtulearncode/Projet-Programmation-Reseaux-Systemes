@@ -600,7 +600,8 @@ class PlayerSettingsMenu:
             'text': (255, 255, 255),
             'selected': (120, 160, 120),
             'scrollbar': (70, 70, 70),
-            'scrollbar_hover': (90, 90, 90)
+            'scrollbar_hover': (90, 90, 90),
+            'disabled': (80, 80, 80)  # Added disabled color
         }
 
         self.settingmenu_image = pygame.image.load(r'..\assets\MenuPhoto\parametrebueno3.png')
@@ -709,8 +710,10 @@ class PlayerSettingsMenu:
             civ_rect = civ_text.get_rect(center=button['civ_rect'].center)
             self.screen.blit(civ_text, civ_rect)
             
-            # Draw AI mode button
-            ai_color = self.colors['button_hover'] if button['ai_rect'].collidepoint(mouse_pos) else self.colors['button']
+            # Draw AI mode button - only active for first player
+            ai_color = self.colors['button_hover'] if (i == 0 and button['ai_rect'].collidepoint(mouse_pos)) else \
+                      self.colors['button'] if i == 0 else \
+                      self.colors['disabled']
             pygame.draw.rect(self.screen, ai_color, button['ai_rect'], border_radius=5)
             ai_text = self.font.render(self.ai_modes[button['ai_index']], True, self.colors['text'])
             ai_rect = ai_text.get_rect(center=button['ai_rect'].center)
@@ -760,15 +763,19 @@ class PlayerSettingsMenu:
                     # Handle start button
                     if self.start_button['rect'].collidepoint(mouse_pos):
                         return [{'civilization': self.civilizations[button['civ_index']], 
-                                'ai_mode': self.ai_modes[button['ai_index']]} 
+                                'ai_mode': self.ai_modes[self.player_buttons[0]['ai_index']]}  # All players use first player's AI mode
                                for button in self.player_buttons]
                     
                     # Handle civilization and AI mode selection
-                    for button in self.player_buttons:
+                    for i, button in enumerate(self.player_buttons):
                         if button['civ_rect'].collidepoint(mouse_pos):
                             button['civ_index'] = (button['civ_index'] + 1) % len(self.civilizations)
-                        elif button['ai_rect'].collidepoint(mouse_pos):
+                        # Only first player can change AI mode
+                        elif i == 0 and button['ai_rect'].collidepoint(mouse_pos):
                             button['ai_index'] = (button['ai_index'] + 1) % len(self.ai_modes)
+                            # Update all other players' AI mode
+                            for other_button in self.player_buttons[1:]:
+                                other_button['ai_index'] = button['ai_index']
             
             pygame.display.flip()
 
@@ -778,7 +785,7 @@ def start_menu(save_file=None):
     global GameMode, map_size, players
     
     # Handle Start Game and Multiplayer the same way
-    if action in ['Start Game', 'Multiplayer']:
+    if action in ['Start Game']:
         settings_menu = GameSettingsMenu()
         settings = settings_menu.run()
         
@@ -842,6 +849,52 @@ def start_menu(save_file=None):
         pygame.quit()
         print("Exiting game")
         sys.exit()
+    else:
+        settings_menu = GameSettingsMenu()
+        settings = settings_menu.run()
+        
+        if settings == 'back':
+            return start_menu(save_file)
+        elif settings:
+            from Game_Engine import GameEngine
+            
+            GameMode = settings['mode']
+            map_size = settings['map_size']
+            num_players = int(settings['num_players'])
+            multi_player = True
+            synchonised = True
+            players.clear()
+            
+            player_settings_menu = PlayerSettingsMenu(num_players)
+            player_settings = player_settings_menu.run()
+            
+            if player_settings:
+                for i, settings in enumerate(player_settings):
+                    player_id = i + 1
+                    new_player = Player(
+                        f'Player {player_id}',
+                        settings['civilization'],
+                        settings['ai_mode'],
+                        player_id=player_id
+                    )
+                    players.append(new_player)
+                
+                pygame.quit()
+                if multi_player:
+                    if synchonised:
+                        game_engine = GameEngine(
+                            game_mode=GameMode,
+                            map_size=map_size,
+                            players=players,
+                            sauvegarde=False )
+                    else:
+                        DataProcessor(game_engine).initiate_sync()
+                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
+            else:
+                return start_menu(save_file)
+        else:
+            pygame.quit()
+            sys.exit()
 
 def start_game(stdscr, save_file=None):
     from Game_Engine import GameEngine
