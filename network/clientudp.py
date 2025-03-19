@@ -27,7 +27,7 @@ def main():
 
     while True:
         # Utiliser select pour surveiller l'entrée utilisateur et les messages du serveur
-        readable, _, _ = select.select([sys.stdin, client_socket], [], [])
+        readable, _, _ = select.select([client_socket], [], [])
 
         for sock in readable:
             if sock == sys.stdin:
