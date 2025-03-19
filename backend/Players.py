@@ -1,4 +1,5 @@
 # Player Class
+from network.Data import *
 class Player:
     def __init__(self, name, civilization, ai_profile, player_id, color=None):
         self.Means_starting_resources = {"Wood": 200, "Food": 50, "Gold": 50}
@@ -16,6 +17,7 @@ class Player:
         self.max_population = 200
         self.training_units = []
         self.id = player_id  # Add this line to store the player's ID
+        self.package = PacketManager(self)
         if self.civilization == "Means":
             self.owned_resources = self.Means_starting_resources
         elif self.civilization == "Leans":

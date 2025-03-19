@@ -40,6 +40,7 @@ class GameEngine:
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
         self.IA_used = False
+        self.send_data = False
 
         # Sauvegarde related attributes
         if not sauvegarde:
@@ -443,8 +444,7 @@ class GameEngine:
                 elif key == ord('i'):
                     self.update_map("1;place_unit;1.v.6;1;3")
                 elif key == ord('o'):
-                    self.update_map("1;remove_unit;1.v.6;1;3")
-
+                    self.send_data = not self.send_data
 
                 #########################
 
@@ -555,6 +555,10 @@ class GameEngine:
                     self.update_gui()
 
                 self.turn += 1
+                if self.send_data:
+                    print(self.players[1].package.package)
+                    self.players[1].package.pakage = ""
+                    print("===========================")
 
             active_players = [p for p in self.players if p.units or p.buildings]
             self.debug_print(f"Player {active_players[0].name} wins the game!", 'Magenta')
