@@ -47,8 +47,18 @@ class PacketManager:
                 writer.writerow(self.package.strip().split(";"))
                 
     @staticmethod
-    def process_packet(player_id) -> list:
-        pass
+    @staticmethod
+    def process_packet(data) -> list:
+        result = []
+    
+    # First, split by double spaces
+        items = data.split('*')
+    
+        for item in items:
+            if item.strip():  # Skip empty items
+                result.append(item.strip().split(';'))
+    
+        return result
         
     def extract_package(self, row):
         PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
@@ -67,3 +77,5 @@ class PacketManager:
         
     def receive_packet(self):
         pass
+
+print(PacketManager.process_packet('2;remove_unit;2.v.515;31.2;109.717*2;place_unit;2.v.516;31.28;109.7*2;remove_unit;2.v.516;31.56;109.43*2;place_unit;2.v.517;31.56476911874513;109.43523088125487*2;remove_unit;2.v.517;31.85568622330503;109.14431377669497'))
