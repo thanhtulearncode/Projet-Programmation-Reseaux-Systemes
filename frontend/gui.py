@@ -1337,7 +1337,7 @@ class GUI(threading.Thread):
         messages = [
             "Initializing isometric view...",
             "Loading resources...",
-            "Preparing terrain...",
+            "Preparing the map...",
             "Loading units...",
             "Almost ready..."
         ]
