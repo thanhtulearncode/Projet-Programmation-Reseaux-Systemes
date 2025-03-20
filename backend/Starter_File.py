@@ -40,11 +40,12 @@ class StartMenu:
         self.background_image = pygame.transform.scale(self.background_image, (screen_width, screen_height))
         # Adapter l'image à la taille de l'écran
 
-        # Adjusted button positions for 3 buttons
+        # Fix button positions for 4 buttons
         self.buttons = [
-            {'text': 'Start Game', 'rect': pygame.Rect(300, 250, 200    , 50)},
-            {'text': 'Load Game', 'rect': pygame.Rect(300, 320, 200, 50)},
-            {'text': 'Exit', 'rect': pygame.Rect(300, 390, 200, 50)}
+            {'text': 'Start Game', 'rect': pygame.Rect(300, 250, 200, 50)},
+            {'text': 'Multiplayer', 'rect': pygame.Rect(300, 320, 200, 50)},
+            {'text': 'Load Game', 'rect': pygame.Rect(300, 390, 200, 50)},
+            {'text': 'Exit', 'rect': pygame.Rect(300, 460, 200, 50)}
         ]
         self.font = pygame.font.Font(None, 48)
         
@@ -599,7 +600,8 @@ class PlayerSettingsMenu:
             'text': (255, 255, 255),
             'selected': (120, 160, 120),
             'scrollbar': (70, 70, 70),
-            'scrollbar_hover': (90, 90, 90)
+            'scrollbar_hover': (90, 90, 90),
+            'disabled': (80, 80, 80)  # Added disabled color
         }
 
         self.settingmenu_image = pygame.image.load(r'..\assets\MenuPhoto\parametrebueno3.png')
@@ -701,15 +703,19 @@ class PlayerSettingsMenu:
             player_rect = player_text.get_rect(right=button['civ_rect'].left - 20, centery=y_pos + 25)
             self.screen.blit(player_text, player_rect)
             
-            # Draw civilization button
-            civ_color = self.colors['button_hover'] if button['civ_rect'].collidepoint(mouse_pos) else self.colors['button']
+            # Draw civilization button - only active for first player
+            civ_color = self.colors['button_hover'] if (i == 0 and button['civ_rect'].collidepoint(mouse_pos)) else \
+                    self.colors['button'] if i == 0 else \
+                    self.colors['disabled']
             pygame.draw.rect(self.screen, civ_color, button['civ_rect'], border_radius=5)
             civ_text = self.font.render(self.civilizations[button['civ_index']], True, self.colors['text'])
             civ_rect = civ_text.get_rect(center=button['civ_rect'].center)
             self.screen.blit(civ_text, civ_rect)
             
-            # Draw AI mode button
-            ai_color = self.colors['button_hover'] if button['ai_rect'].collidepoint(mouse_pos) else self.colors['button']
+            # Draw AI mode button - only active for first player
+            ai_color = self.colors['button_hover'] if (i == 0 and button['ai_rect'].collidepoint(mouse_pos)) else \
+                    self.colors['button'] if i == 0 else \
+                    self.colors['disabled']
             pygame.draw.rect(self.screen, ai_color, button['ai_rect'], border_radius=5)
             ai_text = self.font.render(self.ai_modes[button['ai_index']], True, self.colors['text'])
             ai_rect = ai_text.get_rect(center=button['ai_rect'].center)
@@ -759,49 +765,51 @@ class PlayerSettingsMenu:
                     # Handle start button
                     if self.start_button['rect'].collidepoint(mouse_pos):
                         return [{'civilization': self.civilizations[button['civ_index']], 
-                                'ai_mode': self.ai_modes[button['ai_index']]} 
-                               for button in self.player_buttons]
+                                'ai_mode': self.ai_modes[self.player_buttons[0]['ai_index']]}  # All players use first player's AI mode
+                                for button in self.player_buttons]
                     
                     # Handle civilization and AI mode selection
-                    for button in self.player_buttons:
-                        if button['civ_rect'].collidepoint(mouse_pos):
+                    for i, button in enumerate(self.player_buttons):
+                        if i == 0 and button['civ_rect'].collidepoint(mouse_pos):
                             button['civ_index'] = (button['civ_index'] + 1) % len(self.civilizations)
-                        elif button['ai_rect'].collidepoint(mouse_pos):
+                            # Update all other players' civilization
+                            for other_button in self.player_buttons[1:]:
+                                other_button['civ_index'] = button['civ_index']
+                        elif i == 0 and button['ai_rect'].collidepoint(mouse_pos):
                             button['ai_index'] = (button['ai_index'] + 1) % len(self.ai_modes)
+                            # Update all other players' AI mode
+                            for other_button in self.player_buttons[1:]:
+                                other_button['ai_index'] = button['ai_index']
+                                other_button['civ_index']= button['civ_index']
             
             pygame.display.flip()
 
 def start_menu(save_file=None):
     menu = StartMenu()
     action = menu.run()
+    global GameMode, map_size, players
     
-    if action == 'Start Game':
+    # Handle Start Game and Multiplayer the same way
+    if action in ['Start Game']:
         settings_menu = GameSettingsMenu()
         settings = settings_menu.run()
         
         if settings == 'back':
             return start_menu(save_file)
         elif settings:
-            # Import GameEngine at the start
             from Game_Engine import GameEngine
             
-            # Update global settings
-            global GameMode, map_size, players
             GameMode = settings['mode']
             map_size = settings['map_size']
             num_players = int(settings['num_players'])
-            ### Multiplayer settings
             multi_player = True
             synchonised = True
-            # Clear existing players list
             players.clear()
             
-            # Show player settings menu
             player_settings_menu = PlayerSettingsMenu(num_players)
             player_settings = player_settings_menu.run()
             
             if player_settings:
-                # Create players with selected settings
                 for i, settings in enumerate(player_settings):
                     player_id = i + 1
                     new_player = Player(
@@ -812,10 +820,8 @@ def start_menu(save_file=None):
                     )
                     players.append(new_player)
                 
-                # Close pygame before starting curses
                 pygame.quit()
                 if multi_player:
-                    # Start the game with updated players list
                     if synchonised:
                         game_engine = GameEngine(
                             game_mode=GameMode,
@@ -825,20 +831,12 @@ def start_menu(save_file=None):
                     else:
                         DataProcessor(game_engine).initiate_sync()
                     curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
-                else:
-                    # Start the game with updated players list
-                    curses.wrapper(lambda stdscr: GameEngine(
-                        game_mode=GameMode,
-                        map_size=map_size,
-                        players=players,
-                        sauvegarde=False
-                    ).run(stdscr))
             else:
-                # If player settings menu was closed, return to main menu
                 return start_menu(save_file)
         else:
             pygame.quit()
             sys.exit()
+            
     elif action == 'Load Game' and menu.has_saves:
         load_menu = LoadGameMenu()
         selected_save = load_menu.run()
@@ -856,6 +854,52 @@ def start_menu(save_file=None):
         pygame.quit()
         print("Exiting game")
         sys.exit()
+    else:
+        settings_menu = GameSettingsMenu()
+        settings = settings_menu.run()
+        
+        if settings == 'back':
+            return start_menu(save_file)
+        elif settings:
+            from Game_Engine import GameEngine
+            
+            GameMode = settings['mode']
+            map_size = settings['map_size']
+            num_players = int(settings['num_players'])
+            multi_player = True
+            synchonised = True
+            players.clear()
+            
+            player_settings_menu = PlayerSettingsMenu(num_players)
+            player_settings = player_settings_menu.run()
+            
+            if player_settings:
+                for i, settings in enumerate(player_settings):
+                    player_id = i + 1
+                    new_player = Player(
+                        f'Player {player_id}',
+                        settings['civilization'],
+                        settings['ai_mode'],
+                        player_id=player_id
+                    )
+                    players.append(new_player)
+                
+                pygame.quit()
+                if multi_player:
+                    if synchonised:
+                        game_engine = GameEngine(
+                            game_mode=GameMode,
+                            map_size=map_size,
+                            players=players,
+                            sauvegarde=False )
+                    else:
+                        DataProcessor(game_engine).initiate_sync()
+                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
+            else:
+                return start_menu(save_file)
+        else:
+            pygame.quit()
+            sys.exit()
 
 def start_game(stdscr, save_file=None):
     from Game_Engine import GameEngine

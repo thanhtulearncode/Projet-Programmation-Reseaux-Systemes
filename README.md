@@ -50,3 +50,49 @@ graph TD
     F --> H[2.5D View]
 
 # Projet-Programmation-Reseaux-Systemes
+1. créer des paquets:
+Data.py
+1.1. create_map_packet(self, map):
+    map : Map Object
+    output : paquet de type string
+    Exemple: 
+    "
+    ...WWW...G
+    ....W..G..
+    ..........
+    ..GG......
+    WWWW......
+    "
+1.2. create_unit_packet(self, unit, type): 
+    input:
+        unit : Unit Object
+        type : "spawn_unit", "place_unit", "remove_unit", "kill_unit"
+    output : string f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
+    Exemple: "place_unit;Thibaud;35;106;25;2"
+1.3. create_building_packet(self, building, type):
+    input:
+        building : Building Object
+        type : "spawn_building", "kill_building"
+    output : string f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
+    Exemple: "spawn_building;Town Center;34;106;1000;2"
+2. mettre à jour le jeu à partir des paquets:
+Terrain.py
+2.1. update_initial_map(self, map_packet):
+    input:
+        map_packet : packet de type string (actuel, on peut optimiser le type de map_packet) 
+    output : ressources initiales du jeu
+Game_Engine.py
+2.2. update_units(self, unit_packet):
+    input:
+        unit_packet : packet de type string (actuel) #on peut l'optimiser
+    output : état actuel des unités
+2.3. update_buildings(self, building_packet):
+    input:
+        unit_packet : packet de type string (actuel) #on peut l'optimiser
+    output : état actuel des bâtiments
+2.4. update_map(self, packet):
+    input:
+        unit_packet : grand paquet de type string contenant les état des bâtiment et des unités (mixe)
+    output : état actuel du jeu
+
+### thiếu cập nhật resource hiện tại, đợi Trí cmt readme ###

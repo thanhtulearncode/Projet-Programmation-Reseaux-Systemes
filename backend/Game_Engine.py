@@ -56,8 +56,9 @@ class GameEngine:
 
         # Sauvegarde related attributes
         if not sauvegarde:
-            Building.place_starting_buildings(self.map)   # Place starting town centers on the map
-            Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
+            pass
+            #Building.place_starting_buildings(self.map)   # Place starting town centers on the map
+            #Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
         
         self.debug_print = debug_print
         self.current_time = time.time()
@@ -106,7 +107,91 @@ class GameEngine:
             if player.id == player_id:
                 return player
         return None
-    
+    def update_units(self, unit_packet):
+        #unit_packet = f"{type}{unit.name};{unit.position[0]};{unit.position[1]};{unit.health};{unit.player.id}"
+        unit_info = unit_packet.strip().split(';')
+        print(unit_info)
+        type = unit_info[0]
+        unit_name = unit_info[1]
+        unit_position = int(float(unit_info[2])), int(float(unit_info[3]))
+        unit_health = int(unit_info[4])
+        player_id = int(unit_info[5])
+        player = self.get_player_by_id(player_id)
+        if type == "spawn_unit":
+            unit_position = int(unit_position[0]), int(unit_position[1])
+            if unit_name == "Swordsman":
+                Unit.spawn_unit(Swordsman, unit_position[0], unit_position[1], player, self.map)
+            elif unit_name == "Archer":
+                Unit.spawn_unit(Archer, unit_position[0], unit_position[1], player, self.map)
+            elif unit_name == "Horseman":
+                Unit.spawn_unit(Horseman, unit_position[0], unit_position[1], player, self.map)
+            else:
+                Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
+                if player.units and player.units[-1]:
+                    player.units[-1].name = unit_name
+        elif type == "place_unit":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    self.map.place_unit(int(unit_position[0]), int(unit_position[1]), unit)
+                    break
+
+        elif type == "remove_unit":
+            print("Huy dep trai1")
+            for unit in player.units:
+                print(unit.name)
+                print(unit_name)
+                if unit.name == unit_name:
+                    print("Huy dep trai2")
+                    self.map.remove_unit(int(unit_position[0]), int(unit_position[1]), unit)
+                    print("Huy dep trai3")
+                    break
+        elif type == "kill_unit":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    Unit.kill_unit(player, unit, self.map)
+            
+    def update_buildings(self, building_packet):
+        #building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
+        building_info = building_packet.strip().split(';')
+        type = building_info[0]
+        building_name = building_info[1]
+        building_position = int(float(building_info[2])), int(float(building_info[3]))
+        building_hp = int(building_info[4])
+        player_id = int(building_info[5])
+        player = self.get_player_by_id(player_id)
+        if type == "spawn_building":
+            building_position = int(building_position[0]), int(building_position[1])
+            if building_name == "Town Center":
+                Building.spawn_building(player, building_position[0], building_position[1], TownCenter, self.map)
+            elif building_name == "Barracks":
+                Building.spawn_building(player, building_position[0], building_position[1], Barracks, self.map)
+            elif building_name == "Stable":
+                Building.spawn_building(player, building_position[0], building_position[1], Stable, self.map)
+            elif building_name == "ArcheryRange":
+                Building.spawn_building(player, building_position[0], building_position[1], ArcheryRange, self.map)
+            elif building_name == "Keep":
+                Building.spawn_building(player, building_position[0], building_position[1], Keep, self.map)
+            elif building_name == "Farm":
+                Building.spawn_building(player, building_position[0], building_position[1], Farm, self.map)
+            elif building_name == "House":
+                Building.spawn_building(player, building_position[0], building_position[1], House, self.map)
+            else: 
+                return
+        elif type == "kill_building":
+            for building in player.buildings:
+                if building.position == building_position:
+                    break
+                Building.kill_building(player, player.building, self.map)
+            
+    def update_map(self, packets):
+        packets = packets.split("\n")
+        for packet in packets:
+            if "building" in packet:
+                self.update_buildings(packet)
+            elif "unit" in packet:
+                self.update_units(packet)
+            else:
+                continue
     
     def run(self, stdscr):
         # Initialize the starting view position
@@ -289,42 +374,7 @@ class GameEngine:
             return len(active_players) == 1 # Check if there is only one player left
         else:
             return False
-    def update_map(self, packet):
-        elements = packet.split(";")
-        player_id, update_type, object_id, start_x, start_y = elements
-        start_x, start_y = int(start_x), int(start_y)
-        player_id = int(player_id)
-        t = object_id.split(".")
-        symbol = t[1]
-        player = self.get_player_by_id(player_id)
-        if update_type == "spawn_unit":
-            unit_class = Unit.get_unit_by_symbol(symbol)
-            Unit.spawn_unit(unit_class, start_x, start_y, player, self.map)
-        if update_type == "place_unit":
-            for unit in player.units:
-                if unit.id == object_id:
-                    break
-            self.map.place_unit(start_x, start_y, unit)
-        elif update_type == "remove_unit":
-            for unit in player.units:
-                if unit.id == object_id:
-                    break
-            self.map.remove_unit(start_x,start_y, unit)
-        elif update_type == "move_unit":
-            for unit in player.units:
-                if unit.id == object_id:
-                    break
-            self.map.move_unit(unit, start_x, start_y, unit.position[0], unit.position[1])
-        elif update_type == "spawn_building":
-            building_class = Building.get_building_by_symbol(symbol)
-            Building.spawn_building(building_class, start_x, start_y, player, self.map)
-        elif update_type == "place_building":
-            self.map.place_building(start_x, start_y, building)
-        elif update_type == "remove_building":
-            for building in player.buildings:
-                if building.id == object_id:
-                    break
-            Building.kill_building(player, building, self.map)
+
     #condition de victoire: être le dernier joueur avec des bâtiments
     def victory():
     
@@ -447,15 +497,25 @@ class GameEngine:
 
                 ###### TEST KEYS #######
                 elif key == ord('r'):
-                    self.update_map("1;place_unit;1.v.6;1;1")
+                    self.update_buildings("spawn_building;House;1;1;300;2")
                 elif key == ord('t'):
-                    self.update_map("1;remove_unit;1.v.6;1;1")
+                    self.update_units("kill_unit;Igor;35;103;25;2")
                 elif key == ord('y'):
-                    self.update_map("1;place_unit;1.v.6;1;2")
+                    self.update_units("remove_unit;Thibaud;41;107;25;2")
+                    self.update_units("place_unit;Thibaud;41;108;25;2")
+                    print("yes")
                 elif key == ord('u'):
-                    self.update_map("1;remove_unit;1.v.6;1;2")
+                    packets = "spawn_building;Town Center;114;60;1000;1\nspawn_building;Town Center;36;107;1000;2\nspawn_building;Town Center;34;15;1000;3\nspawn_unit;Leopold;116;58;25;1\nspawn_unit;Adriana;113;61;25;1\nspawn_unit;Mohammed;111;63;25;1\nspawn_unit;Fran?ois/François;33;107;25;2\nspawn_unit;Igor;35;103;25;2\nspawn_unit;Thibaud;41;107;25;2\nspawn_unit;Johnny;38;18;25;3\nspawn_unit;Clement;29;15;25;3\nspawn_unit;Rosy;30;18;25;3"
+                    packets += "\nplace_unit;Fran?ois/François;38;99;25;2\nremove_unit;Fran?ois/François;37.55806095915671;99.44193904084328;25;2\nplace_unit;Fran?ois/François;37.55806095915671;99.44193904084328;25;2\nremove_unit;Fran?ois/François;37;100;25;2\nplace_unit;Fran?ois/François;37;100;25;2\nremove_unit;Fran?ois/François;36.396691802976505;100.6033081970235;25;2\nplace_unit;Fran?ois/François;36.396691802976505;100.6033081970235;25;2\nspawn_building;House;43;107;200;2\nremove_unit;Fran?ois/François;36;101;25;2\nplace_unit;Fran?ois/François;36;101;25;2\nremove_unit;Fran?ois/François;35.46968474980076;101.53031525019924;25;2\nplace_unit;Fran?ois/François;35.46968474980076;101.53031525019924;25;2\nremove_unit;Fran?ois/François;35.02551900665695;101.97448099334305;25;2\nplace_unit;Fran?ois/François;35.02551900665695;101.97448099334305;25;2\nremove_unit;Fran?ois/François;35;102;25;2\nplace_unit;Fran?ois/François;35;102;25;2\nremove_unit;Fran?ois/François;35.0;102.75311470031738;25;2\nplace_unit;Fran?ois/François;35.0;102.75311470031738;25;2\nremove_unit;Fran?ois/François;35;103;25;2\nplace_unit;Fran?ois/François;35;103;25;2\nremove_unit;Fran?ois/François;35.0;103.75312232971191;25;2\nplace_unit;Fran?ois/François;35.0;103.75312232971191;25;2\nremove_unit;Fran?ois/François;35;104;25;2\nplace_unit;Fran?ois/François;35;104;25;2\nremove_unit;Fran?ois/François;35.0;104.6281566619873;25;2\nplace_unit;Fran?ois/François;35.0;104.6281566619873;25;2\nremove_unit;Fran?ois/François;35;105;25;2\nplace_unit;Fran?ois/François;35;105;25;2\nremove_unit;Fran?ois/François;35.0;105.62820434570312;25;2\nplace_unit;Fran?ois/François;35.0;105.62820434570312;25;2\nremove_unit;Fran?ois/François;35;106;25;2\nplace_unit;Fran?ois/François;35;106;25;2"
+                    self.update_map(packets)
+
+                    for player in self.players:
+                        for unit in player.units:
+                            print(unit.name)
+                            print(unit.position)
+
                 elif key == ord('i'):
-                    self.update_map("1;place_unit;1.v.6;1;3")
+                    self.map.update_initial_map(self.players[0].package.map)
                 elif key == ord('o'):
                     self.send_data = not self.send_data
 

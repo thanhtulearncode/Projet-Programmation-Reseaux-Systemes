@@ -7,7 +7,7 @@ import math
 from backend.Starter_File import players as players_list
 from logger import debug_print
 from Starter_File import global_speedS
-
+from network.Data import PacketManager
 # Building Class
 class Building:
     global_speed = global_speedS
@@ -55,7 +55,7 @@ class Building:
                 building_instance = TownCenter(player)
                 player.ai.decided_builds.append((town_center_x, town_center_y, TownCenter(player).size))
                 building_instance.spawn_building(player, town_center_x, town_center_y, TownCenter, game_map)
-
+                
                 # Check if the civilization is Marines
                 if player.civilization == "Marines":
                     marine_buildings = [
@@ -92,6 +92,7 @@ class Building:
         building.position = (x, y)
         game_map.place_building(x, y, building)  # Use the passed map instead of cls.map
         player.buildings.append(building)  # Add the building to the player's list of buildings
+        PacketManager.create_building_packet(building, "spawn_building")
         #debug_print(f"Building {building.name} belonging to {player.name} at ({x}, {y}) spawned.")
 
     @classmethod
@@ -105,8 +106,8 @@ class Building:
             debug_print(f"Building {building_to_kill} belonging to {player.name} at ({x}, {y}) killed.", 'DarkBlue')
         else:
             debug_print(f"Building {building_to_kill} does not belong to {player.name}.", 'Yellow')
-
-    def get_building_by_symbol(self, symbol):
+    
+    def get_building_by_symbol(symbol):
         if symbol == 'T':
             return TownCenter
         elif symbol == 'H':

@@ -3,6 +3,7 @@ import math
 from Building import TownCenter
 from logger import debug_print
 from Starter_File import global_speedS
+from network.Data import PacketManager
 
 # Unit Class
 class Unit:
@@ -83,6 +84,8 @@ class Unit:
                         
                         if game_map.is_tile_free_for_unit(spawn_x, spawn_y):  # Check if tile is free
                             cls.spawn_unit(Villager, spawn_x, spawn_y, player, game_map)  # Place the villager --> IA should spawn them next to the appropriate building
+                            unit = player.units[-1]
+                            #PacketManager.create_unit_packet(unit, "spawn")
                             placed = True
                         else:
                             pass  # Try again if tile is not free
@@ -103,9 +106,6 @@ class Unit:
         else:
             unit = unit_class
         
-
-
-        
         if (0 <= x < game_map.width and 
             0 <= y < game_map.height and 
             not (player.population >= player.max_population or 
@@ -117,6 +117,7 @@ class Unit:
                 unit.position = (x, y)
                 player.population += 1
                 game_map.place_unit(x, y, unit)
+                PacketManager.create_unit_packet(unit, "spawn_unit")
                 return unit
             else:
                 debug_print(f"Cannot place unit at ({x}, {y}): tile is not walkable.", 'Yellow')
@@ -177,6 +178,7 @@ class Unit:
         
     @classmethod
     def kill_unit(cls, player, unit_to_kill, game_map):
+        PacketManager.create_unit_packet(unit_to_kill, "kill_unit")
         if unit_to_kill in player.units:
             player.units.remove(unit_to_kill)  # Remove the unit from the player's list of units
             if unit_to_kill in player.ai.defending_units:
