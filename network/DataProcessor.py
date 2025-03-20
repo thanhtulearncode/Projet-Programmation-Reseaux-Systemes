@@ -34,7 +34,7 @@ class DataProcessor:
         
         pass
 
-    def update_data(self, player, init=False):
+    def update_data(self, init=False):
         packet =self.packet_manager.receive_packet()
         self.packet_manager.process_packet(packet)
         if not init:
