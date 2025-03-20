@@ -52,7 +52,7 @@ class GameEngine:
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
         self.IA_used = False
-        self.send_data = False
+        self.send_data = True
 
         # Sauvegarde related attributes
         if not sauvegarde:
@@ -106,7 +106,53 @@ class GameEngine:
             if player.id == player_id:
                 return player
         return None
+    def update_units(self, unit_packet):
+        #unit_packet = f"{type}{unit.name};{unit.position[0]};{unit.position[1]};{unit.health};{unit.player.id}"
+        unit_info = unit_packet.split(";")
+        type = unit_info[0]
+        unit_name = unit_info[1]
+        unit_position = float(unit_info[2]), int(unit_info[3])
+        unit_health = int(unit_info[4])
+        player_id = int(unit_info[5])
+        player = self.get_player_by_id(player_id)
+        if type == "spawn":
+            if unit_name == "Swordsman":
+                Unit.spawn_unit(Swordsman, unit_position[0], unit_position[1], player, self.map)
+                self.map.place_unit(unit_position[0], unit_position[1], unit)
+            elif unit_name == "Archer":
+                Unit.spawn_unit(Archer, unit_position[0], unit_position[1], player, self.map)
+                self.map.place_unit(unit_position[0], unit_position[1], unit)  
+            elif unit_name == "Horseman":
+                Unit.spawn_unit(Horseman, unit_position[0], unit_position[1], player, self.map)
+                self.map.place_unit(unit_position[0], unit_position[1], unit)
+            else:
+                Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map, unit_name)
+                self.map.place_unit(unit_position[0], unit_position[1], unit)
+        elif type == "place":
+            if unit_name == "Swordsman":
+                unit = Swordsman(player)
+                unit.hp = unit_health
+                unit.position = unit_position
+                player.units.append(unit)
+                map.place_unit(unit_position[0], unit_position[1], unit)
+            elif unit_name == "Archer":
+                unit = Archer(player)
+                unit.hp = unit_health
+                unit.position = unit_position   
+            elif unit_name == "Horseman":
+                unit = Horseman(player, unit_position)
+                unit.hp = unit_health
+            else:
+                unit = Villager(player, unit_position, unit_name)
+                unit.hp = unit_health
+        elif type =="remove":
+            player.units.remove(unit)
+            self.map.remove_unit(unit_position[0], unit_position[1], unit)
+
+    def update_buildings(self, building_packet):
+        pass
     
+
     
     def run(self, stdscr):
         # Initialize the starting view position
@@ -458,7 +504,6 @@ class GameEngine:
                     self.update_map("1;remove_unit;1.v.6;1;2")
                 elif key == ord('i'):
                     self.map.update_initial_map(self.players[0].package.map)
-                    self.update_map("1;spawn_building;1.T.67;1;1")
                 elif key == ord('o'):
                     self.send_data = not self.send_data
 

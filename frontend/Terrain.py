@@ -139,7 +139,6 @@ class Map:
                     self.buildings.append(building)"""
 
 
-
     def is_tile_free(self, x, y):
         if 0 <= x < self.width and 0 <= y < self.height:
             tile = self.grid[y][x]
@@ -195,10 +194,10 @@ class Map:
             tile = self.grid[y][x]
             tile.unit.append(unit)  # Place the unit on the tile
             self.set_id(unit)
-            unit.player.package.create_packet(unit, "place_unit")
+            unit.player.package.create_packet(unit, "place")
 
     def remove_unit(self, x, y, unit):
-        unit.player.package.create_packet(unit, "remove_unit")
+        unit.player.package.create_packet(unit, "remove")
         tile = self.grid[y][x]
         if tile.unit is not None and unit in tile.unit:
             tile.unit.remove(unit)  # Remove the unit from the tile

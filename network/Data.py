@@ -19,14 +19,15 @@ class PacketManager:
             PacketManager._initialized = True
         
     def create_packet(self, object, update_type, amount=0, attacked_by=None):
-        start_x = object.position[0]
+        pass
+        """start_x = object.position[0]
         start_y = object.position[1]
         PacketManager.package_header = f"{self.player.id};{update_type};{object.id};{start_x};{start_y}"
         
         match update_type:
             case "place_unit" | "remove_unit" | "place_building" | "remove_building":
                 self.package += f"{PacketManager.package_header}\n"
-        """case "attacked":
+        case "attacked":
                 object_info = {
                     'player_id': object.player.id,
                     'unit_name': object.name,
@@ -66,11 +67,17 @@ class PacketManager:
             map_packet += "\n"
         print(map_packet)
         self.map = map_packet
+
+    @classmethod
+    def create_unit_packet(self, unit, type):
+        unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
+        unit.player.package.package += f"{unit_packet}\n"
+        print(unit_packet)
                 
     @staticmethod
     def process_packet(data) -> list:
         result = []
-        items = data.split('*')
+        items = data.split('\n')
     
         for item in items:
             if item.strip():  # Skip empty items
