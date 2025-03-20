@@ -73,6 +73,12 @@ class PacketManager:
         unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
         unit.player.package.package += f"{unit_packet}\n"
         print(unit_packet)
+    
+    @classmethod
+    def create_building_packet(self, building, type):
+        building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
+        building.player.package.package += f"{building_packet}\n"
+        print(building_packet)
                 
     @staticmethod
     def process_packet(data) -> list:

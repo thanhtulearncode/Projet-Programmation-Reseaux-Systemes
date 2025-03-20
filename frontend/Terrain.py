@@ -194,10 +194,10 @@ class Map:
             tile = self.grid[y][x]
             tile.unit.append(unit)  # Place the unit on the tile
             self.set_id(unit)
-            unit.player.package.create_packet(unit, "place")
+            PacketManager.create_unit_packet(unit, "place_unit")
 
     def remove_unit(self, x, y, unit):
-        unit.player.package.create_packet(unit, "remove")
+        PacketManager.create_unit_packet(unit, "remove_unit")
         tile = self.grid[y][x]
         if tile.unit is not None and unit in tile.unit:
             tile.unit.remove(unit)  # Remove the unit from the tile
