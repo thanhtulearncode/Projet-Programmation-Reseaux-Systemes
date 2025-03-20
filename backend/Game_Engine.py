@@ -317,6 +317,8 @@ class GameEngine:
             self.map.move_unit(unit, start_x, start_y, unit.position[0], unit.position[1])
         elif update_type == "spawn_building":
             building_class = Building.get_building_by_symbol(symbol)
+            print(building_class)
+            building_class.__init__(player,"TownCenter")
             Building.spawn_building(building_class, start_x, start_y, player, self.map)
         elif update_type == "place_building":
             self.map.place_building(start_x, start_y, building)
@@ -455,7 +457,7 @@ class GameEngine:
                 elif key == ord('u'):
                     self.update_map("1;remove_unit;1.v.6;1;2")
                 elif key == ord('i'):
-                    self.update_map("1;place_unit;1.v.6;1;3")
+                    self.update_map("1;spawn_building;1.T.67;1;1")
                 elif key == ord('o'):
                     self.send_data = not self.send_data
 

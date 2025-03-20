@@ -105,8 +105,8 @@ class Building:
             debug_print(f"Building {building_to_kill} belonging to {player.name} at ({x}, {y}) killed.", 'DarkBlue')
         else:
             debug_print(f"Building {building_to_kill} does not belong to {player.name}.", 'Yellow')
-
-    def get_building_by_symbol(self, symbol):
+    
+    def get_building_by_symbol(symbol):
         if symbol == 'T':
             return TownCenter
         elif symbol == 'H':

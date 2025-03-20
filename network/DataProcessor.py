@@ -1,4 +1,4 @@
-from Data import PacketManager
+from network.Data import PacketManager
 class DataProcessor:
     _instance = None
 
