@@ -14,7 +14,7 @@ class GameRoomManager:
 
     def scan_rooms(self):
         packet_manager = self.data_processor.packet_manager
-        packet_manager.pakage = f"1;scan_rooms"
+        packet_manager.package = f"1;scan_rooms"
         packet_manager.send_packet()
         respond= packet_manager.update_data()
         if not respond:
