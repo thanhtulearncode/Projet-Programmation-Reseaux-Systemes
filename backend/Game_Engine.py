@@ -52,7 +52,7 @@ class GameEngine:
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
         self.IA_used = False
-        self.send_data = True
+        self.send_data = False
 
         # Sauvegarde related attributes
         if not sauvegarde:
@@ -127,7 +127,7 @@ class GameEngine:
                 Unit.spawn_unit(Horseman, unit_position[0], unit_position[1], player, self.map)
             else:
                 Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
-                if player.units is not None:
+                if player.units and player.units[-1]:
                     player.units[-1].name = unit_name
         elif type == "place_unit":
             for unit in player.units:
@@ -173,7 +173,9 @@ class GameEngine:
                 Building.spawn_building(player, building_position[0], building_position[1], Keep, self.map)
             elif building_name == "Farm":
                 Building.spawn_building(player, building_position[0], building_position[1], Farm, self.map)
-            else:
+            elif building_name == "House":
+                Building.spawn_building(player, building_position[0], building_position[1], House, self.map)
+            else: 
                 return
         elif type == "kill_building":
             for building in player.buildings:
@@ -524,7 +526,7 @@ class GameEngine:
 
                 ###### TEST KEYS #######
                 elif key == ord('r'):
-                    self.update_map("1;place_unit;1.v.6;1;1")
+                    self.update_buildings("spawn_building;House;1;1;300;2")
                 elif key == ord('t'):
                     self.update_units("kill_unit;Igor;35;103;25;2")
                 elif key == ord('y'):
@@ -533,12 +535,19 @@ class GameEngine:
                     print("yes")
                 elif key == ord('u'):
                     packets = "spawn_building;Town Center;114;60;1000;1\nspawn_building;Town Center;36;107;1000;2\nspawn_building;Town Center;34;15;1000;3\nspawn_unit;Leopold;116;58;25;1\nspawn_unit;Adriana;113;61;25;1\nspawn_unit;Mohammed;111;63;25;1\nspawn_unit;Fran?ois/François;33;107;25;2\nspawn_unit;Igor;35;103;25;2\nspawn_unit;Thibaud;41;107;25;2\nspawn_unit;Johnny;38;18;25;3\nspawn_unit;Clement;29;15;25;3\nspawn_unit;Rosy;30;18;25;3"
-                    #packets += "\nplace_unit;Thibaud;37.371877670288086;106.0;25;2\nremove_unit;Igor;32.44194038954244;105.44194038954244;25;2\nplace_unit;Igor;32.44194038954244;105.44194038954244;25;2\nremove_unit;Thibaud;37;106;25;2\nplace_unit;Thibaud;37;106;25;2\nremove_unit;Igor;32.70934427308029;105.70934427308029;25;2\nplace_unit;Igor;32.70934427308029;105.70934427308029;25;2\nremove_unit;Thibaud;36.62183380126953;106.0;25;2\nplace_unit;Thibaud;36.62183380126953;106.0;25;2\nremove_unit;Igor;33;106;25;2\nplace_unit;Igor;33;106;25;2\nremove_unit;Thibaud;36.04981231689453;106.0;25;2\nplace_unit;Thibaud;36.04981231689453;106.0;25;2\nremove_unit;Igor;33.431135177612305;106.0;25;2\nplace_unit;Igor;33.431135177612305;106.0;25;2\nremove_unit;Thibaud;36;106;25;2\nplace_unit;Thibaud;36;106;25;2\nremove_unit;Igor;33.809207916259766;106.0;25;2\nplace_unit;Igor;33.809207916259766;106.0;25;2\nremove_unit;Thibaud;35.62192726135254;106.0;25;2\nplace_unit;Thibaud;35.62192726135254;106.0;25;2\nremove_unit;Igor;34;106;25;2\nplace_unit;Igor;34;106;25;2\nremove_unit;Thibaud;35.12189483642578;106.0;25;2\nplace_unit;Thibaud;35.12189483642578;106.0;25;2\nremove_unit;Igor;34.50311851501465;106.0;25;2\nplace_unit;Igor;34.50311851501465;106.0;25;2\nremove_unit;Thibaud;35;106;25;2\nplace_unit;Thibaud;35;106;25;2\nspawn_building;House;31;109;200;2\nremove_unit;Igor;35;106;25;2\nplace_unit;Igor;35;106;25;2"
+                    packets += "\nplace_unit;Fran?ois/François;38;99;25;2\nremove_unit;Fran?ois/François;37.55806095915671;99.44193904084328;25;2\nplace_unit;Fran?ois/François;37.55806095915671;99.44193904084328;25;2\nremove_unit;Fran?ois/François;37;100;25;2\nplace_unit;Fran?ois/François;37;100;25;2\nremove_unit;Fran?ois/François;36.396691802976505;100.6033081970235;25;2\nplace_unit;Fran?ois/François;36.396691802976505;100.6033081970235;25;2\nspawn_building;House;43;107;200;2\nremove_unit;Fran?ois/François;36;101;25;2\nplace_unit;Fran?ois/François;36;101;25;2\nremove_unit;Fran?ois/François;35.46968474980076;101.53031525019924;25;2\nplace_unit;Fran?ois/François;35.46968474980076;101.53031525019924;25;2\nremove_unit;Fran?ois/François;35.02551900665695;101.97448099334305;25;2\nplace_unit;Fran?ois/François;35.02551900665695;101.97448099334305;25;2\nremove_unit;Fran?ois/François;35;102;25;2\nplace_unit;Fran?ois/François;35;102;25;2\nremove_unit;Fran?ois/François;35.0;102.75311470031738;25;2\nplace_unit;Fran?ois/François;35.0;102.75311470031738;25;2\nremove_unit;Fran?ois/François;35;103;25;2\nplace_unit;Fran?ois/François;35;103;25;2\nremove_unit;Fran?ois/François;35.0;103.75312232971191;25;2\nplace_unit;Fran?ois/François;35.0;103.75312232971191;25;2\nremove_unit;Fran?ois/François;35;104;25;2\nplace_unit;Fran?ois/François;35;104;25;2\nremove_unit;Fran?ois/François;35.0;104.6281566619873;25;2\nplace_unit;Fran?ois/François;35.0;104.6281566619873;25;2\nremove_unit;Fran?ois/François;35;105;25;2\nplace_unit;Fran?ois/François;35;105;25;2\nremove_unit;Fran?ois/François;35.0;105.62820434570312;25;2\nplace_unit;Fran?ois/François;35.0;105.62820434570312;25;2\nremove_unit;Fran?ois/François;35;106;25;2\nplace_unit;Fran?ois/François;35;106;25;2"
                     packets = packets.split("\n");
                     print(packets)
                     for packet in packets:
+                        if packet == "spawn_building;Town Center;43;107;200;2":
+                            print("Huy dep trai")
                         self.update_buildings(packet)
                         self.update_units(packet)
+
+                    for player in self.players:
+                        for unit in player.units:
+                            print(unit.name)
+                            print(unit.position)
 
                 elif key == ord('i'):
                     self.map.update_initial_map(self.players[0].package.map)
