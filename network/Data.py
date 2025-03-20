@@ -24,66 +24,6 @@ class PacketManager:
             self.server_address = ("127.0.0.1")
             self.server_port = 8080 + self.player.id
             PacketManager._initialized = True
-        
-    def create_packet(self, object, update_type, amount=0, attacked_by=None):
-        pass
-        """start_x = object.position[0]
-        start_y = object.position[1]
-        PacketManager.package_header = f"{self.player.id};{update_type};{object.id};{start_x};{start_y}"
-        
-        match update_type:
-            case "place_unit" | "remove_unit" | "place_building" | "remove_building":
-                self.package += f"{PacketManager.package_header}\n"
-        case "attacked":
-        PacketManager.package_header = f"{self.player.id};{update_type};{object.id};{start_x};{start_y}"
-        
-        match update_type:
-            case "place_unit" | "remove_unit" | "place_building" | "remove_building":
-                self.package += f"{PacketManager.package_header}\n"
-        case "attacked":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'attacked_by': attacked_by.name if attacked_by else None,
-                    'attacked_by': attacked_by.name if attacked_by else None,
-                    'amount': amount
-                }
-                print(object_info)
-            case "resource_gathered" | "food_gathered":
-            case "resource_gathered" | "food_gathered":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'amount': amount
-                }
-                print(object_info)"""
-        
-                print(object_info)"""
-        
-        if self.package:
-            with open("spawner_test_output.csv", mode="a", newline="") as file:
-                writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
-                writer.writerow(self.package.strip().split(";"))
-    
-    @classmethod
-    def create_map_packet(self, map):
-        map_packet = ""
-        for row in map:
-            for cell in row:
-                if cell:
-                    if cell.resource:
-                        map_packet += cell.resource.symbol
-                    elif cell.unit:
-                        map_packet += cell.unit.symbol
-                    elif cell.building:
-                        map_packet += cell.building.symbol
-                    elif cell.rubble:
-                        map_packet += cell.rubble.symbol
-                    else:
-                        map_packet += "."
-            map_packet += "\n"
-        print(map_packet)
-        self.map = map_packet
 
     @classmethod
     def create_unit_packet(self, unit, type):
@@ -102,8 +42,8 @@ class PacketManager:
     
         return result
         
-                writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
-                writer.writerow(self.package.strip().split(";"))
+        writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
+        writer.writerow(self.package.strip().split(";"))
     
     @classmethod
     def create_map_packet(self, map):
