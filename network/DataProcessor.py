@@ -40,16 +40,14 @@ class DataProcessor:
         
         pass
 
-    def update_data(self, player):
+    def update_data(self, player, init=False):
         packet =self.packet_manager.receive_packet()
         self.packet_manager.process_packet(packet)
-        for row in packet:
-            match row[1]:
-                case "place_unit"| "remove_unit" | "place_building" | "remove_building":
-                    self.game_engine.update_map(row)
-
-                case "scan_rooms":
-                    pass
+        if not init:
+            for row in packet:
+                match row[1]:
+                    case "place_unit"| "remove_unit" | "place_building" | "remove_building":
+                        self.game_engine.update_map(row)
 
 
     def setup_engine(self):
