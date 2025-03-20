@@ -1,7 +1,13 @@
 import csv
+import socket
+import select
+import sys
+
+BUF = 512
+SERVER_IP = "127.0.0.1"
 class PacketManager:
     _instance = None 
-    package_header = "" 
+    package_header = ""   
     _initialized = False  
     def __new__(cls):
         if cls._instance is None:
@@ -15,8 +21,27 @@ class PacketManager:
             self.player = None
             self.package = ""
             self.map = None
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.server_address = ("127.0.0.1")
+            self.server_port = 8080 + self.player.id
             PacketManager._initialized = True
+
+    @classmethod
+    def create_unit_packet(self, unit, type):
+        unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
+        unit.player.package.package += f"{unit_packet}\n"
+        print(unit_packet)
+                
+    @staticmethod
+    def process_packet(data) -> list:
+        result = []
+        items = data.split('\n')
     
+        for item in items:
+            if item.strip():  # Skip empty items
+                result.append(item.strip().split(';'))
+        return result
+        
     @classmethod
     def create_map_packet(self, map):
         map_packet = ""
@@ -43,22 +68,14 @@ class PacketManager:
         unit.player.package.package += f"{unit_packet}\n"
         print(unit_packet)
     
+    
     @classmethod
     def create_building_packet(self, building, type):
         building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
         building.player.package.package += f"{building_packet}\n"
         print(building_packet)
                 
-    @staticmethod
-    def process_packet(data) -> list:
-        result = []
-        items = data.split('\n')
-    
-        for item in items:
-            if item.strip():  # Skip empty items
-                result.append(item.strip().split(';'))
-    
-        return result
+
         
     def extract_package(self, row):
         PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
@@ -68,17 +85,36 @@ class PacketManager:
         with open(file_name, mode="r") as file:
             reader = csv.reader(file, delimiter=';')
             next(reader, None) 
+            next(reader, None) 
             for row in reader:
                 package_header = self.extract_package(row)
                 print(package_header)
                 
     #send self.package to the server
     def send_packet(self):
-        pass
-        
-    def receive_packet(self)-> str:
-        pass
+        self.socket.setblocking(False)
+        try:
+            self.socket.sendto(self.package.encode('utf-8'), (SERVER_IP, self.server_port))
+            print(f"Message envoyé au serveur")
+        except socket.error as e:
+            print(f"Erreur lors de l'envoi du message: {e}")
 
+    def receive_packet(self)-> str:
+        try:
+            self.socket.setblocking(False)  
+        except socket.error as e:
+            sys.exit(1)
+
+        while True:    
+            readable, _, _ = select.select([self.socket], [], [])
+
+            for sock in readable:
+                if sock == self.socket:
+                    
+                    received_packets,_= self.socket.recvfrom(BUF)
+
+            return received_packets.decode('utf-8')
+    
 class Resource_manager:
     _instance = None
 

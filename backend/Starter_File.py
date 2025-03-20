@@ -6,6 +6,7 @@ import os
 from Players import *
 from network.DataProcessor import DataProcessor
 from network.Game_Room import *
+from network.Data import *
 # Game Mode
 GameMode = None # "Utopia" or "Gold Rush"
 
@@ -932,7 +933,7 @@ def start_menu(save_file=None):
             DataProcessor().game_engine = game_engine
             PacketManager().package=Resource_manager(this_player).create_init_resource_request()
             PacketManager().send_packet()
-            DataProcessor().update_data( True)
+            DataProcessor().update_data(this_player, True)
             curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.player_id))
             
 

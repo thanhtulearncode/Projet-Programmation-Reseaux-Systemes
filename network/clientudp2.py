@@ -3,9 +3,10 @@ import select
 import sys
 
 BUF = 512
-SERVER_PORT = 8083  # Port fixe pour communiquer avec le serveur
+SERVER_PORT = 8087  # Port fixe pour communiquer avec le serveur
 SERVER_IP="127.0.0.1"
 def main():
+    # Demander l'adresse IP du serveur à l'utilisateur
 
     try:
         # Créer un socket UDP
@@ -30,16 +31,7 @@ def main():
         readable, _, _ = select.select([client_socket], [], [])
 
         for sock in readable:
-            if sock == sys.stdin:
-                # Lire l'entrée utilisateur pour envoyer un message
-                message = input()
-                if message.lower() == "exit":
-                    print("Fermeture de la connexion...")
-                    client_socket.close()
-                    exit(0)
-                client_socket.sendto(message.encode(), (SERVER_IP, SERVER_PORT))
-                print(f"Message envoyé au serveur : {message}")
-            elif sock == client_socket:
+            if sock == client_socket:
                 # Recevoir un message du serveur
                 data, addr = client_socket.recvfrom(BUF)
                 received_message = data.decode()
@@ -51,5 +43,5 @@ def main():
                     # Afficher les messages normaux reçus d'autres clients
                     print(f"Message reçu de autre client : {received_message}")
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     main()

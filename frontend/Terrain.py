@@ -2,7 +2,7 @@ import random
 import math
 import curses
 from backend.Starter_File import GameMode
-from network.Data import PacketManager
+#from network.Data import PacketManager
 from backend.Units import *
 from backend.Building import *
 #packetManager = PacketManager()
@@ -141,11 +141,10 @@ class Map:
                         if self.grid[y + j][x + i].rubble in self.rubbles:
                             self.rubbles.remove(self.grid[y + j][x + i].rubble)
             self.set_id(building)
-            building.player.package.create_packet(building, "place_building")
+            #packetManager.create_packet(building, "place_building")
                         
 
     def remove_building(self, x, y, building):
-        building.player.package.create_packet(building, "remove_building")
         for i in range(building.size):
             for j in range(building.size):
                 #packetManager.create_packet(building, "remove_building")
@@ -157,16 +156,16 @@ class Map:
                     self.grid[y + j][x + i].rubble = rubble
                     if i == 0 and j == 0:
                         self.rubbles.append(rubble)
+        
     
     def place_unit(self, x, y, unit):
         if 0 <= x < self.width and 0 <= y < self.height:
             tile = self.grid[y][x]
             tile.unit.append(unit)  # Place the unit on the tile
             self.set_id(unit)
-            unit.player.package.create_packet(unit, "place_unit")
+            #packetManager.create_packet(unit, "place_unit")
 
     def remove_unit(self, x, y, unit):
-        unit.player.package.create_packet(unit, "remove_unit")
         tile = self.grid[y][x]
         if tile.unit is not None and unit in tile.unit:
             tile.unit.remove(unit)  # Remove the unit from the tile

@@ -28,18 +28,7 @@ from IA import IA
 
 # GameEngine Class
 class GameEngine:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(GameEngine, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self, game_mode, map_size, players, sauvegarde=False):
-        if hasattr(self, '_initialized') and self._initialized:
-            return
-        self._initialized = True
-
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -53,7 +42,6 @@ class GameEngine:
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
         self.IA_used = False
-        self.send_data = False
 
         # Sauvegarde related attributes
         if not sauvegarde:
@@ -108,7 +96,7 @@ class GameEngine:
                 return player
         return None
     
-    
+    """
     def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
@@ -283,7 +271,7 @@ class GameEngine:
         finally:
             if self.gui_running:
                 self.stop_gui_thread()
-    
+    """
     def check_victory(self):
         if self.turn % 500 == 0: # Check if the game is over
             active_players = [p for p in self.players if p.units or p.buildings] # Check if the player has units and buildings
@@ -298,10 +286,10 @@ class GameEngine:
         t = object_id.split(".")
         symbol = t[1]
         player = self.get_player_by_id(player_id)
-        if update_type == "spawn_unit":
-            unit_class = Unit.get_unit_by_symbol(symbol)
-            Unit.spawn_unit(unit_class, start_x, start_y, player, self.map)
         if update_type == "place_unit":
+            #unit_class = Unit.get_unit_by_symbol(symbol)
+            #Unit.spawn_unit(unit_class, start_x, start_y, player, self.map)
+            #unit = player.units[-1]
             for unit in player.units:
                 if unit.id == object_id:
                     break
@@ -316,10 +304,9 @@ class GameEngine:
                 if unit.id == object_id:
                     break
             self.map.move_unit(unit, start_x, start_y, unit.position[0], unit.position[1])
-        elif update_type == "spawn_building":
-            building_class = Building.get_building_by_symbol(symbol)
-            Building.spawn_building(building_class, start_x, start_y, player, self.map)
         elif update_type == "place_building":
+            building_class = Building.get_building_by_symbol(symbol)
+            building = Building.spawn_building(building_class, start_x, start_y, player, self.map)
             self.map.place_building(start_x, start_y, building)
         elif update_type == "remove_building":
             for building in player.buildings:
@@ -608,10 +595,6 @@ class GameEngine:
                     self.update_gui()
 
                 self.turn += 1
-                if self.send_data:
-                    print(self.players[1].package.package)
-                    self.players[1].package.pakage = ""
-                    print("===========================")
 
             active_players = [p for p in self.players if p.units or p.buildings]
             self.debug_print(f"Player {active_players[0].name} wins the game!", 'Magenta')
