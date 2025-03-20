@@ -35,19 +35,29 @@ class PacketManager:
             case "place_unit" | "remove_unit" | "place_building" | "remove_building":
                 self.package += f"{PacketManager.package_header}\n"
         case "attacked":
+        PacketManager.package_header = f"{self.player.id};{update_type};{object.id};{start_x};{start_y}"
+        
+        match update_type:
+            case "place_unit" | "remove_unit" | "place_building" | "remove_building":
+                self.package += f"{PacketManager.package_header}\n"
+        case "attacked":
                 object_info = {
                     'player_id': object.player.id,
                     'unit_name': object.name,
                     'attacked_by': attacked_by.name if attacked_by else None,
+                    'attacked_by': attacked_by.name if attacked_by else None,
                     'amount': amount
                 }
                 print(object_info)
+            case "resource_gathered" | "food_gathered":
             case "resource_gathered" | "food_gathered":
                 object_info = {
                     'player_id': object.player.id,
                     'unit_name': object.name,
                     'amount': amount
                 }
+                print(object_info)"""
+        
                 print(object_info)"""
         
         if self.package:
@@ -92,13 +102,57 @@ class PacketManager:
     
         return result
         
+                writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
+                writer.writerow(self.package.strip().split(";"))
+    
+    @classmethod
+    def create_map_packet(self, map):
+        map_packet = ""
+        for row in map:
+            for cell in row:
+                if cell:
+                    if cell.resource:
+                        map_packet += cell.resource.symbol
+                    elif cell.unit:
+                        map_packet += cell.unit.symbol
+                    elif cell.building:
+                        map_packet += cell.building.symbol
+                    elif cell.rubble:
+                        map_packet += cell.rubble.symbol
+                    else:
+                        map_packet += "."
+            map_packet += "\n"
+        print(map_packet)
+        self.map = map_packet
+
+    @classmethod
+    def create_unit_packet(self, unit, type):
+        unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
+        unit.player.package.package += f"{unit_packet}\n"
+        print(unit_packet)
+                
+    @staticmethod
+    def process_packet(data) -> list:
+        result = []
+        items = data.split('\n')
+    
+        for item in items:
+            if item.strip():  # Skip empty items
+                result.append(item.strip().split(';'))
+    
+        return result
+        
     def extract_package(self, row):
+        PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
+        return PacketManager.package_header
+        
         PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
         return PacketManager.package_header
         
     def process_csv(self, file_name):
         with open(file_name, mode="r") as file:
             reader = csv.reader(file, delimiter=';')
+            next(reader, None) 
             next(reader, None) 
             for row in reader:
                 package_header = self.extract_package(row)
