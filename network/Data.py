@@ -163,7 +163,7 @@ class PacketManager:
     def receive_packet(self)-> str:
         pass
 
-class Resource_manger:
+class Resource_manager:
     def __init__(self, player):
         self.player = player
 
