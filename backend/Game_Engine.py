@@ -412,7 +412,6 @@ class GameEngine:
         viewport_width, viewport_height = 30, 30
         # Display the initial viewport
         stdscr.clear()  # Clear the screen
-        processor = DataProcessor(self)
         if self.terminalon :
             self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
 
