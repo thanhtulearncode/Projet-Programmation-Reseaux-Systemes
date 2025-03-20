@@ -45,6 +45,8 @@ class PacketManager:
             with open("spawner_test_output.csv", mode="a", newline="") as file:
                 writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
                 writer.writerow(self.package.strip().split(";"))
+
+    def create_packet_of_
                 
     @staticmethod
     def process_packet(data) -> list:
