@@ -888,14 +888,17 @@ def start_menu(save_file=None):
                         players.append(new_player)
                     
                     pygame.quit()
-
+                    this_player = players[0]
+                    PacketManager(this_player)
+                    Resource_manager(this_player)
+                    GameRoom(num_players, GameMode, map_size, this_player.civilisation, this_player.ai_mode)
                     game_engine = GameEngine(
                         game_mode=GameMode,
                         map_size=map_size,
                         players=players,
                         sauvegarde=False )
                     DataProcessor().game_engine = game_engine
-                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
+                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 0))
                 else:
                     return start_menu(save_file)
             else:
@@ -918,7 +921,8 @@ def start_menu(save_file=None):
                 )
                 players.append(new_player)
             pygame.quit()
-            
+            this_player = players[game_room.player_count]
+            PacketManager(this_player)
             from Game_Engine import GameEngine
             game_engine = GameEngine(
                 game_mode=GameMode,
@@ -926,7 +930,10 @@ def start_menu(save_file=None):
                 players=players,
                 sauvegarde=False )
             DataProcessor().game_engine = game_engine
-            ##curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, game_room.player_count))
+            PacketManager().package=Resource_manager(this_player).create_init_resource_request()
+            PacketManager().send_packet()
+            DataProcessor().update_data(this_player, True)
+            curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.player_id))
             
 
 

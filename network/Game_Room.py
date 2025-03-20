@@ -27,12 +27,20 @@ class GameRoomManager:
             return gameroom
         
 class GameRoom:
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(GameRoom, cls).__new__(cls)
+        return cls._instance
+    
     def __init__(self, number_of_players, game_mode, map_size, civilisation, ai_mode):
-        self.room_id = "1"
-        self.number_of_players = number_of_players
-        self.player_count = 0
-        self.game_mode = game_mode
-        self.map_size = map_size
-        self.civilisation = civilisation
-        self.ai_mode = ai_mode
+        if not hasattr(self, 'initialized'):
+            self.initialized = True
+            self.room_id = "1"
+            self.number_of_players = number_of_players
+            self.player_count = 0
+            self.game_mode = game_mode
+            self.map_size = map_size
+            self.civilisation = civilisation
+            self.ai_mode = ai_mode
         

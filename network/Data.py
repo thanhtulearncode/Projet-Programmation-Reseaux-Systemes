@@ -163,9 +163,19 @@ class PacketManager:
     def receive_packet(self)-> str:
         pass
 
-class Resource_manger:
+class Resource_manager:
+    _instance = None
+
+    def __new__(cls, player):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.player = player
+        return cls._instance
+    
     def __init__(self, player):
-        self.player = player
+        if not hasattr(self, '_initialized'):
+            self._initialized = True
+            self.player = player
 
     def create_init_resource_request(self, target_player_id=0):
         return f"{self.player.id};{target_player_id}"
