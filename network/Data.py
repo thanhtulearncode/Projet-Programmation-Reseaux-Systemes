@@ -15,6 +15,7 @@ class PacketManager:
         if not PacketManager._initialized:
             self.player = player
             self.package = ""
+            self.map = None
             PacketManager._initialized = True
         
     def create_packet(self, object, update_type, amount=0, attacked_by=None):
@@ -45,8 +46,26 @@ class PacketManager:
             with open("spawner_test_output.csv", mode="a", newline="") as file:
                 writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
                 writer.writerow(self.package.strip().split(";"))
-
-    def create_packet_of_
+    
+    @classmethod
+    def create_map_packet(self, map):
+        map_packet = ""
+        for row in map:
+            for cell in row:
+                if cell:
+                    if cell.resource:
+                        map_packet += cell.resource.symbol
+                    elif cell.unit:
+                        map_packet += cell.unit.symbol
+                    elif cell.building:
+                        map_packet += cell.building.symbol
+                    elif cell.rubble:
+                        map_packet += cell.rubble.symbol
+                    else:
+                        map_packet += "."
+            map_packet += "\n"
+        print(map_packet)
+        self.map = map_packet
                 
     @staticmethod
     def process_packet(data) -> list:

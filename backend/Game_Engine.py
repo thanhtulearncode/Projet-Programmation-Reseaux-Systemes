@@ -457,6 +457,7 @@ class GameEngine:
                 elif key == ord('u'):
                     self.update_map("1;remove_unit;1.v.6;1;2")
                 elif key == ord('i'):
+                    self.map.update_initial_map(self.players[0].package.map)
                     self.update_map("1;spawn_building;1.T.67;1;1")
                 elif key == ord('o'):
                     self.send_data = not self.send_data

@@ -24,8 +24,8 @@ class Map:
         object.id += f".{self.id_count}"
 
     def generate_map(self):
-        
         self.generate_resources()
+        PacketManager.create_map_packet(self.grid)
 
     def generate_resources(self):
         
@@ -106,6 +106,38 @@ class Map:
                     resource = Wood()
                     tile.resource = resource
                     self.resources["Wood"].append((x, y))  # Store Wood resource position
+
+    def update_initial_map(self, map_packet):
+        rows = map_packet.split("\n")
+        for y, row in enumerate(rows):
+            for x, cell in enumerate(row):
+                tile = self.grid[y][x]
+                if cell == "W":
+                    resource = Wood()
+                    tile.resource = resource
+                    self.resources["Wood"].append((x, y))
+                elif cell == "G":
+                    resource = Gold()
+                    tile.resource = resource
+                    self.resources["Gold"].append((x, y))
+                elif cell == "x":
+                    rubble = Rubble()
+                    tile.rubble = rubble
+                    self.rubbles.append(rubble)
+                elif cell in ["v", "s", "h", "a"]:
+                    unit = Unit(cell, (x, y))
+                    tile.unit.append(unit)
+                    self.set_id(unit)
+                else:
+                    continue
+                """elif cell in ["T", "C", "F", "B", "S", "A", "K"]:
+                    building_class = Building.get_building_by_symbol
+                    size = building_class.size
+                    building = Building(cell, (x, y))
+                    tile.building = building
+                    self.set_id(building)
+                    self.buildings.append(building)"""
+
 
 
     def is_tile_free(self, x, y):
