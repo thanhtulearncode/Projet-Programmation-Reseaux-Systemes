@@ -408,14 +408,20 @@ class GameEngine:
             self.debug_print(f"Error loading game: {e}")
 
     def run_multi_player(self, stdscr, this_player_id):
+        # Get terminal size
+        terminal_height, terminal_width = stdscr.getmaxyx()
+        
+        # Adjust viewport size to fit terminal
+        viewport_width = min(30, terminal_width // 2)  # Divide by 2 because each tile takes 2 chars
+        viewport_height = min(30, terminal_height - 1)  # Leave 1 line for status
+        
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
-        viewport_width, viewport_height = 30, 30
+        
         # Display the initial viewport
-        stdscr.clear()  # Clear the screen
-        if self.terminalon :
-            self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
-
+        stdscr.clear()
+        
+        # Rest of the code remains the same
         try:
             while not self.check_victory():
                 # Mettre à jour current_time au début de chaque itération si le jeu n'est pas en pause
@@ -461,6 +467,19 @@ class GameEngine:
                     
                 elif key == ord('o'):
                     self.send_data = not self.send_data
+                elif key == ord('i'):  # Add AI mode switching
+                    # Get current player's AI
+                    current_player = self.get_player_by_id(this_player_id)
+                    if current_player and current_player.ai:
+                        # Toggle between aggressive and defensive
+                        if current_player.ai_profile == "aggressive":
+                            current_player.ai_profile = "defensive"
+                        else:
+                            current_player.ai_profile = "aggressive"
+                        # Update the AI instance
+                        current_player.ai = IA(current_player, current_player.ai_profile, self.map, time.time())
+                        self.debug_print(f"AI mode changed to: {current_player.ai_profile}")
+                        print(f"AI mode changed to: {current_player.ai_profile}")
 
                 #########################
 
@@ -575,7 +594,13 @@ class GameEngine:
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()
                 if self.terminalon :
-                    self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)
+                    try:
+                        self.map.display_viewport(stdscr, top_left_x, top_left_y, 
+                                                viewport_width, viewport_height, 
+                                                Map_is_paused=self.is_paused)
+                    except curses.error:
+                        # Handle viewport drawing error gracefully
+                        pass
                 stdscr.refresh()
 
                 if self.gui_running:
