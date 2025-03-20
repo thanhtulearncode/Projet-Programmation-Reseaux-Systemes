@@ -8,13 +8,7 @@ class DataProcessor:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, player=None):
-        self.game_engine = None
-        self.player = player
-        if player:
-            self.packet_manager = PacketManager(player)
-        else:
-            self.packet_manager = None
+    def __init__(self):
         if not hasattr(self, '_initialized'):
             self._initialized = True
             self.game_engine = None
