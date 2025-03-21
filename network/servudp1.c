@@ -1,21 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+<<<<<<< Updated upstream
+#include <unistd.h>
+#include <arpa/inet.h>
+=======
+<<<<<<< HEAD
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")  // Link against Winsock library
+>>>>>>> Stashed changes
 
 #define BUF 512
-#define PORT_CLIENT 8083
-#define PORT_UDP2 8085
+#define PORT_CLIENT 8083  // Port pour communiquer avec les clients
+#define MAX_CLIENTS 10    // Nombre maximum de clients que le serveur peut gérer
 
+<<<<<<< Updated upstream
+void stop(char* msg) {
+    perror(msg);
+=======
 void stop(const char* msg) {
     printf("Error: %s (code %d)\n", msg, WSAGetLastError());
+=======
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define BUF 512
+#define PORT_CLIENT 8083  // Port pour communiquer avec les clients
+#define MAX_CLIENTS 10    // Nombre maximum de clients que le serveur peut gérer
+
+void stop(char* msg) {
+    perror(msg);
+>>>>>>> test_network
+>>>>>>> Stashed changes
     exit(1);
 }
 
 int main() {
+<<<<<<< Updated upstream
+    int client_sockfd, n;
+=======
+<<<<<<< HEAD
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         stop("WSAStartup failed");
@@ -23,99 +49,141 @@ int main() {
 
     SOCKET client_sockfd, udp2_sockfd;
     int n;
+>>>>>>> Stashed changes
     char buffer[BUF];
-    struct sockaddr_in client_addr, udp2_addr;
-    int client_len = sizeof(client_addr);
-    int udp2_len = sizeof(udp2_addr);
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    struct sockaddr_in clients[MAX_CLIENTS];  // Tableau pour stocker les adresses des clients connectés
+    int client_count = 0;  // Nombre actuel de clients connectés
 
-    // Create UDP socket for client
-    if ((client_sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
-        stop("Client socket creation failed");
+    // Créer un socket UDP pour le serveur
+    if ((client_sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        stop("Erreur de création du socket serveur");
 
-    memset(&client_addr, 0, client_len);
-    client_addr.sin_family = AF_INET;
-    client_addr.sin_addr.s_addr = INADDR_ANY;
-    client_addr.sin_port = htons(PORT_CLIENT);
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT_CLIENT);
 
-    if (bind(client_sockfd, (struct sockaddr*)&client_addr, client_len) == SOCKET_ERROR)
-        stop("Bind failed for client");
+    if (bind(client_sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+        stop("Erreur de bind");
 
-    printf("UDP1 server listening on port %d for client...\n", PORT_CLIENT);
+    printf("Serveur UDP en écoute sur le port %d...\n", PORT_CLIENT);
 
-    // Create UDP socket for UDP2
-    if ((udp2_sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET)
-        stop("UDP2 socket creation failed");
-
-    memset(&udp2_addr, 0, udp2_len);
-    udp2_addr.sin_family = AF_INET;
-    udp2_addr.sin_addr.s_addr = INADDR_ANY;
-    udp2_addr.sin_port = htons(PORT_UDP2);
-
-    if (bind(udp2_sockfd, (struct sockaddr*)&udp2_addr, udp2_len) == SOCKET_ERROR)
-        stop("Bind failed for UDP2");
-
-    fd_set readfds;
-    int max_fd = (client_sockfd > udp2_sockfd) ? client_sockfd : udp2_sockfd;
-    
-    printf("UDP1 server listening on port %d for UDP2...\n", PORT_UDP2);
-
-    // Receive connection request from UDP2
-    memset(buffer, 0, BUF);
-    n = recvfrom(udp2_sockfd, buffer, BUF, 0, (struct sockaddr*)&udp2_addr, &udp2_len);
-    if (n == SOCKET_ERROR)
-        stop("Failed to receive connection request from UDP2");
-
-    printf("Connection request received from UDP2: %s\n", buffer);
-
-    // Send acknowledgment to UDP2
-    snprintf(buffer, BUF, "Connection accepted by UDP1");
-    if (sendto(udp2_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&udp2_addr, udp2_len) == SOCKET_ERROR)
-        stop("Failed to send acknowledgment to UDP2");
-
-    printf("Connection with UDP2 established.\n");
-
-    // Message handling loop
+    // Boucle principale pour recevoir les demandes de connexion et transmettre les messages
     while (1) {
-        FD_ZERO(&readfds);
-        FD_SET(client_sockfd, &readfds);
-        FD_SET(udp2_sockfd, &readfds);
+        memset(buffer, 0, BUF);
+        n = recvfrom(client_sockfd, buffer, BUF, 0, (struct sockaddr*)&client_addr, &client_len);
+        if (n < 0)
+            stop("Erreur de réception");
 
-        int activity = select(max_fd + 1, &readfds, NULL, NULL, NULL);
-        if (activity < 0) {
-            stop("Select error");
-        }
-        // Receive message from client
-        if (FD_ISSET(client_sockfd, &readfds)) {
-            memset(buffer, 0, BUF);
-            n = recvfrom(client_sockfd, buffer, BUF, 0, (struct sockaddr*)&client_addr, &client_len);
-            if (n == SOCKET_ERROR) {
-                printf("Receive error from client: %d\n", WSAGetLastError());
-                continue;
+        printf("Message reçu de %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+
+        if (strncmp(buffer, "CONNECT", 7) == 0) {
+            // Ajouter l'adresse du client dans la liste si le message est CONNECT
+            int already_connected = 0;
+            for (int i = 0; i < client_count; i++) {
+                if (clients[i].sin_addr.s_addr == client_addr.sin_addr.s_addr &&
+                    clients[i].sin_port == client_addr.sin_port) {
+                    already_connected = 1;
+                    break;
+                }
             }
-            printf("Message received from client...\n");
-            if (sendto(udp2_sockfd, buffer, n, 0, (struct sockaddr*)&udp2_addr, udp2_len) == SOCKET_ERROR) {
-                printf("Message send error to UDP2: %d\n", WSAGetLastError());
-                continue;
-            } else printf("Message successfully sent to UDP2.\n");
-        }
-        // Receive message from UDP2
 
-        if (FD_ISSET(udp2_sockfd, &readfds)) {
-            memset(buffer, 0, BUF);
-            n = recvfrom(udp2_sockfd, buffer, BUF, 0, NULL, NULL);
-            if (n == SOCKET_ERROR) {
-                printf("Receive error from UDP2: %d\n", WSAGetLastError());
-                continue;
-            } else printf("Message received from UDP2...\n");
-            if (sendto(client_sockfd, buffer, n, 0, (struct sockaddr*)&client_addr, client_len) == SOCKET_ERROR) {
-                printf("Message send error to client: %d\n", WSAGetLastError());
-                continue;
-            } else printf("Message successfully sent to client.\n");            
+            if (!already_connected && client_count < MAX_CLIENTS) {
+                clients[client_count] = client_addr;
+                client_count++;
+                snprintf(buffer, BUF, "Connexion acceptée par le serveur. Vous pouvez maintenant envoyer des messages.");
+                if (sendto(client_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&client_addr, client_len) < 0)
+                    stop("Erreur d'envoi de la réponse au client");
+                printf("Connexion acceptée et message envoyé au client.\n");
+            }
+        } else {
+            // Si le message n'est pas CONNECT, le transférer à tous les clients sauf celui qui a envoyé le message
+            for (int i = 0; i < client_count; i++) {
+                if (clients[i].sin_addr.s_addr != client_addr.sin_addr.s_addr ||
+                    clients[i].sin_port != client_addr.sin_port) {
+                    if (sendto(client_sockfd, buffer, n, 0, (struct sockaddr*)&clients[i], sizeof(clients[i])) < 0)
+                        stop("Erreur de transfert de message");
+                }
+            }
+            printf("Message transféré à tous les clients.\n");
         }
     }
 
+<<<<<<< Updated upstream
+    close(client_sockfd);
+=======
     closesocket(client_sockfd);
     closesocket(udp2_sockfd);
     WSACleanup();
+=======
+    int client_sockfd, n;
+    char buffer[BUF];
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    struct sockaddr_in clients[MAX_CLIENTS];  // Tableau pour stocker les adresses des clients connectés
+    int client_count = 0;  // Nombre actuel de clients connectés
+
+    // Créer un socket UDP pour le serveur
+    if ((client_sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        stop("Erreur de création du socket serveur");
+
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT_CLIENT);
+
+    if (bind(client_sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+        stop("Erreur de bind");
+
+    printf("Serveur UDP en écoute sur le port %d...\n", PORT_CLIENT);
+
+    // Boucle principale pour recevoir les demandes de connexion et transmettre les messages
+    while (1) {
+        memset(buffer, 0, BUF);
+        n = recvfrom(client_sockfd, buffer, BUF, 0, (struct sockaddr*)&client_addr, &client_len);
+        if (n < 0)
+            stop("Erreur de réception");
+
+        printf("Message reçu de %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+
+        if (strncmp(buffer, "CONNECT", 7) == 0) {
+            // Ajouter l'adresse du client dans la liste si le message est CONNECT
+            int already_connected = 0;
+            for (int i = 0; i < client_count; i++) {
+                if (clients[i].sin_addr.s_addr == client_addr.sin_addr.s_addr &&
+                    clients[i].sin_port == client_addr.sin_port) {
+                    already_connected = 1;
+                    break;
+                }
+            }
+
+            if (!already_connected && client_count < MAX_CLIENTS) {
+                clients[client_count] = client_addr;
+                client_count++;
+                snprintf(buffer, BUF, "Connexion acceptée par le serveur. Vous pouvez maintenant envoyer des messages.");
+                if (sendto(client_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&client_addr, client_len) < 0)
+                    stop("Erreur d'envoi de la réponse au client");
+                printf("Connexion acceptée et message envoyé au client.\n");
+            }
+        } else {
+            // Si le message n'est pas CONNECT, le transférer à tous les clients sauf celui qui a envoyé le message
+            for (int i = 0; i < client_count; i++) {
+                if (clients[i].sin_addr.s_addr != client_addr.sin_addr.s_addr ||
+                    clients[i].sin_port != client_addr.sin_port) {
+                    if (sendto(client_sockfd, buffer, n, 0, (struct sockaddr*)&clients[i], sizeof(clients[i])) < 0)
+                        stop("Erreur de transfert de message");
+                }
+            }
+            printf("Message transféré à tous les clients.\n");
+        }
+    }
+
+    close(client_sockfd);
+>>>>>>> test_network
+>>>>>>> Stashed changes
     return 0;
 }

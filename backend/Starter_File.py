@@ -6,6 +6,7 @@ import os
 from Players import *
 from network.DataProcessor import DataProcessor
 from network.Game_Room import *
+from network.Data import *
 # Game Mode
 GameMode = None # "Utopia" or "Gold Rush"
 
