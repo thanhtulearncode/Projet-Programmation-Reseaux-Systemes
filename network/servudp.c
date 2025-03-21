@@ -4,7 +4,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#define BUF 512
+#define BUF 9182
 
 
 
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     // Set broadcast address
     memset(&broadcast_addr, 0, sizeof(broadcast_addr));
     broadcast_addr.sin_family = AF_INET;
-    broadcast_addr.sin_addr.s_addr = inet_addr("192.168.1.255");
+    broadcast_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
     broadcast_addr.sin_port = htons(udp_port);
 
     // Send broadcast message to UDP1
