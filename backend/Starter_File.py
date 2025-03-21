@@ -831,7 +831,7 @@ def start_menu(save_file=None):
                     sauvegarde=False )
                 ###To be removed after testing
                 this_player = players[2]
-                PacketManager(this_player)
+                PacketManager().set_player_port(this_player)
                 ###To be changed after testing
                 curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr,2))
             else:
@@ -890,7 +890,7 @@ def start_menu(save_file=None):
                     
                     pygame.quit()
                     this_player = players[0]
-                    PacketManager(this_player)
+                    PacketManager().set_player_port(this_player)
                     Resource_manager(this_player)
                     GameRoom(num_players, GameMode, map_size, this_player.civilisation, this_player.ai_mode)
                     game_engine = GameEngine(

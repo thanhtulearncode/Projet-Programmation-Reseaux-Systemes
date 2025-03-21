@@ -23,9 +23,12 @@ class PacketManager:
             self.map = None
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.server_address = ("127.0.0.1")
-            self.server_port = 8080 + self.player.id
+            self.server_port = 8080 
             PacketManager._initialized = True
-
+    @classmethod
+    def set_player_port(self, player):
+        self.player = player
+        self.server_port = 8080 + player.id
     @classmethod
     def create_unit_packet(self, unit, type):
         unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
