@@ -41,3 +41,5 @@ Ajoute nouvelle regle pour le pare-feu Window
 !!! REMARQUE:
 UNE SEULE serveur sur une machine
 la client doit envoyer un message au server pour etablir une connection
+
+For test sur le branche test_netwwork: broadcastserv.c > listen.py > test.py
