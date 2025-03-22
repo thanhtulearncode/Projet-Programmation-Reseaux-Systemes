@@ -38,11 +38,21 @@ class PacketManager:
     @staticmethod
     def process_packet(data) -> list:
         result = []
-        items = data.split('\n')
-    
+        # Remove trailing asterisk if only one message
+        if data.count('*') <= 1:
+            data = data.rstrip('*')
+            
+        items = data.split('*')
+        
         for item in items:
             if item.strip():  # Skip empty items
-                result.append(item.strip().split(';'))
+                parts = item.strip().split(';')
+                # Check if first element is a number
+                if parts and parts[0].isdigit():
+                    result.append(parts)
+                else:
+                    result.append(['None'])
+        
         return result
         
     @classmethod
@@ -142,4 +152,4 @@ class Resource_manager:
             return f"{requesting_player_id};{resource_str}"
         return None
 
-print(PacketManager.process_packet('2;remove_unit;2.v.515;31.2;109.717*2;place_unit;2.v.516;31.28;109.7*2;remove_unit;2.v.516;31.56;109.43*2;place_unit;2.v.517;31.56476911874513;109.43523088125487*2;remove_unit;2.v.517;31.85568622330503;109.14431377669497'))
+print(PacketManager.process_packet('3;remove_unit;2.v.515;31.2;109.717'))
