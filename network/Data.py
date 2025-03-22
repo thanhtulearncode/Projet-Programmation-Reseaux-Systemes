@@ -130,7 +130,7 @@ class PacketManager:
             sys.exit(1)
 
         while True:    
-            readable, _, _ = select.select([self.socket], [], [],5)
+            readable, _, _ = select.select([self.socket], [], [],0)
             received_packets = None
             for sock in readable:
                 if sock == self.socket:
