@@ -152,4 +152,4 @@ class Resource_manager:
             return f"{requesting_player_id};{resource_str}"
         return None
 
-print(PacketManager.process_packet('3;remove_unit;2.v.515;31.2;109.717'))
+print(PacketManager.process_packet(';remove_unit;2.v.515;31.2;109.717*;remove_unit;2.v.515;31.2;109.717*'))
