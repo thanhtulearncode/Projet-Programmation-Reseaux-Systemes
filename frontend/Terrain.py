@@ -28,9 +28,8 @@ class Map:
         PacketManager.create_map_packet(self.grid)
 
     def generate_resources(self):
-        
-        num_resources = int(self.width * self.height * 0.03)  # 3% of the map as resource tiles
 
+        num_resources = int(self.width * self.height * 0.03)  # 3% of the map as resource tiles
         # Gold Generation
         num_gold = int(num_resources * 0.3)  # 30% of resource tiles as gold
 
@@ -76,7 +75,7 @@ class Map:
                             tile.resource = resource
                             self.resources["Gold"].append((x, y))  # Store the position of Gold resources
                         break  # Exit the loop once a valid position is found
-
+        
 
         # Wood Generation
         num_wood = (num_resources - num_gold) // 10  # Remaining resource tiles as wood --> increase the '15' for less forests
@@ -106,37 +105,32 @@ class Map:
                     resource = Wood()
                     tile.resource = resource
                     self.resources["Wood"].append((x, y))  # Store Wood resource position
+        for x, y in self.resources["Wood"]:
+            PacketManager.create_resource_map_packet(self.grid[y][x].resource, x, y, "generate")
+        for x, y in self.resources["Gold"]:
+            PacketManager.create_resource_map_packet(self.grid[y][x].resource, x, y, "generate")
 
-    def update_initial_map(self, map_packet):
-        rows = map_packet.split("\n")
-        for y, row in enumerate(rows):
-            for x, cell in enumerate(row):
-                tile = self.grid[y][x]
-                if cell == "W":
-                    resource = Wood()
-                    tile.resource = resource
-                    self.resources["Wood"].append((x, y))
-                elif cell == "G":
-                    resource = Gold()
-                    tile.resource = resource
-                    self.resources["Gold"].append((x, y))
-                elif cell == "x":
-                    rubble = Rubble()
-                    tile.rubble = rubble
-                    self.rubbles.append(rubble)
-                elif cell in ["v", "s", "h", "a"]:
-                    unit = Unit(cell, (x, y))
-                    tile.unit.append(unit)
-                    self.set_id(unit)
-                else:
-                    continue
-                """elif cell in ["T", "C", "F", "B", "S", "A", "K"]:
-                    building_class = Building.get_building_by_symbol
-                    size = building_class.size
-                    building = Building(cell, (x, y))
-                    tile.building = building
-                    self.set_id(building)
-                    self.buildings.append(building)"""
+    def update_resources_map(self, resources_map_packet):
+        resources_map_packet = resources_map_packet.split("\n")
+        for packet in resources_map_packet:
+            #resource_packet = f"{type};{resource.type};{x};{y};{resource.amount}"
+            packet = packet.split(";")
+            type = packet[0]
+            resource_type = packet[1]
+            x = int(packet[2])
+            y = int(packet[3])
+            amount = int(packet[4])
+            if type == "generate":
+                resource = Gold() if resource_type == "Gold" else Wood()
+                resource.amount = amount
+                self.grid[y][x].resource = resource
+                self.resources[resource_type].append((x, y))
+            elif type == "update_resource":
+                resource = self.grid[y][x].resource
+                resource.amount = amount
+                if resource.amount <= 0:
+                    self.grid[y][x].resource = None
+                    self.resources[resource_type].remove((x, y))
 
 
     def is_tile_free(self, x, y):

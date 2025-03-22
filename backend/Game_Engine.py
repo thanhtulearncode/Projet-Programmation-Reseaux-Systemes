@@ -52,7 +52,7 @@ class GameEngine:
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
         self.IA_used = False
-        self.send_data = False
+        self.send_data = True
 
         # Sauvegarde related attributes
         if not sauvegarde:
@@ -132,6 +132,8 @@ class GameEngine:
         elif type == "place_unit":
             for unit in player.units:
                 if unit.name == unit_name:
+                    unit.position = unit_position
+                    unit.hp = unit_health  
                     self.map.place_unit(int(unit_position[0]), int(unit_position[1]), unit)
                     break
 
@@ -190,6 +192,8 @@ class GameEngine:
                 self.update_buildings(packet)
             elif "unit" in packet:
                 self.update_units(packet)
+            elif "resource" in packet:
+                self.update_resources_map(packet)
             else:
                 continue
     
@@ -497,7 +501,13 @@ class GameEngine:
 
                 ###### TEST KEYS #######
                 elif key == ord('r'):
-                    self.update_buildings("spawn_building;House;1;1;300;2")
+                    for player in self.players:
+                        print(player.package.map)
+                        print(player.package.package)
+                        player.package.map=""
+                        player.package.package=""
+                    Building.place_starting_buildings(self.map)   # Place starting town centers on the map
+                    Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
                 elif key == ord('t'):
                     self.update_units("kill_unit;Igor;35;103;25;2")
                 elif key == ord('y'):

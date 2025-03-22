@@ -7,7 +7,7 @@ from frontend.Terrain import *
 from logger import debug_print
 from Units import *
 from Building import *
-#from network.Data import PacketManager
+from network.Data import PacketManager
 
 #packetManager = PacketManager()
 class Action:
@@ -355,7 +355,8 @@ class Action:
                     unit.carrying[resource_type] += amount_to_gather
                     if resource_type == "Gold" or resource_type == "Wood":
                         tile.resource.amount -= amount_to_gather
-                        #packetManager.create_packet(tile, "resource_gathered", amount_to_gather)
+                        #create_resource_map_packet(self, resource, x, y, type):
+                        PacketManager.create_resource_map_packet(tile.resource, unit.target_resource[0], unit.target_resource[1], "update_resource")
                         # If resource is depleted, remove it from the map
                         if tile.resource.amount <= 0:
                             tile.resource = None

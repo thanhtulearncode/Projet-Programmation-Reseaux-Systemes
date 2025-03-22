@@ -18,7 +18,7 @@ class PacketManager:
             self.socket = None
             self.server_address = "127.0.0.1"
             self.server_port = 8081
-            self.map = None
+            self.resources_map = ""
             PacketManager._initialized = True
         
     def create_packet(self, object, update_type, amount=0, attacked_by=None):
@@ -68,20 +68,26 @@ class PacketManager:
                     else:
                         map_packet += "."
             map_packet += "\n"
-        print(map_packet)
+        #print(map_packet)
         self.map = map_packet
+    @classmethod
+    def create_resource_map_packet(self, resource, x, y, type):
+        resource_packet = f"{type};{resource.type};{x};{y};{resource.amount}"
+        print(resource_packet)
+        
 
+    
     @classmethod
     def create_unit_packet(self, unit, type):
         unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
         unit.player.package.package += f"{unit_packet}\n"
-        print(unit_packet)
+        #print(unit_packet) += f"{resource_packet}\n"
     
     @classmethod
     def create_building_packet(self, building, type):
         building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
         building.player.package.package += f"{building_packet}\n"
-        print(building_packet)
+        #print(building_packet)
                 
     @staticmethod
     def process_packet(data) -> list:
