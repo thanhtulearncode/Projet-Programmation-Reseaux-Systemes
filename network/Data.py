@@ -53,27 +53,14 @@ class PacketManager:
     
     @classmethod
     def create_map_packet(self, map):
-        map_packet = ""
-        for row in map:
-            for cell in row:
-                if cell:
-                    if cell.resource:
-                        map_packet += cell.resource.symbol
-                    elif cell.unit:
-                        map_packet += cell.unit.symbol
-                    elif cell.building:
-                        map_packet += cell.building.symbol
-                    elif cell.rubble:
-                        map_packet += cell.rubble.symbol
-                    else:
-                        map_packet += "."
-            map_packet += "\n"
-        #print(map_packet)
+        map_packet = map.map_encoding()
         self.map = map_packet
+        print(map_packet)
+        
     @classmethod
     def create_resource_map_packet(self, resource, x, y, type):
         resource_packet = f"{type};{resource.type};{x};{y};{resource.amount}"
-        print(resource_packet)
+        #print(resource_packet)
         
     @classmethod
     def create_unit_packet(self, unit, type):

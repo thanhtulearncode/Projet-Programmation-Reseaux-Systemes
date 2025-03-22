@@ -1,3 +1,4 @@
+import re
 import random
 import math
 import curses
@@ -24,8 +25,10 @@ class Map:
         object.id += f".{self.id_count}"
 
     def generate_map(self):
+        pass
         self.generate_resources()
-        PacketManager.create_map_packet(self.grid)
+        #print(self.map_encoding())
+        PacketManager.create_map_packet(self)
 
     def generate_resources(self):
 
@@ -105,10 +108,12 @@ class Map:
                     resource = Wood()
                     tile.resource = resource
                     self.resources["Wood"].append((x, y))  # Store Wood resource position
+        """
         for x, y in self.resources["Wood"]:
             PacketManager.create_resource_map_packet(self.grid[y][x].resource, x, y, "generate")
         for x, y in self.resources["Gold"]:
-            PacketManager.create_resource_map_packet(self.grid[y][x].resource, x, y, "generate")
+            PacketManager.create_resource_map_packet(self.grid[y][x].resource, x, y, "generate")"
+        """
 
     def update_resources_map(self, resources_map_packet):
         resources_map_packet = resources_map_packet.split("\n")
@@ -329,7 +334,42 @@ class Map:
             pass
         return nearest_drop_point    
     
+    def map_encoding(self):
+        encoded_rows = []
+        for row in self.grid:
+            encoded_row = []
+            prev_symbol = None
+            count = 0
 
+            for tile in row:
+                symbol = str(tile)  # Gold: "G", Wood: "W", Empty: "."
+                if symbol == prev_symbol:
+                    count += 1
+                else:
+                    if prev_symbol is not None:
+                        encoded_row.append(f"{prev_symbol}{count}")
+                    prev_symbol = symbol
+                    count = 1
+
+            encoded_row.append(f"{prev_symbol}{count}") 
+            encoded_rows.append("".join(encoded_row))
+
+        return "/".join(encoded_rows)
+
+    def map_decoding(self, encoded_map):
+        self.grid = []
+        for y, line in enumerate(encoded_map.split("/")):  
+            row = []
+            for match in re.findall(r"([.GW])(\d+)", line):  
+                symbol, count = match[0], int(match[1])
+                for _ in range(count):
+                    tile = Tile(len(row), y)  
+                    if symbol == "G":
+                        tile.resource = Gold()
+                    elif symbol == "W":
+                        tile.resource = Wood()
+                    row.append(tile)
+            self.grid.append(row)
 
 class Tile:
     def __init__(self, x, y):

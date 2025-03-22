@@ -52,7 +52,7 @@ class GameEngine:
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
         self.IA_used = False
-        self.send_data = True
+        self.send_data = False
 
         # Sauvegarde related attributes
         if not sauvegarde:
@@ -107,6 +107,10 @@ class GameEngine:
             if player.id == player_id:
                 return player
         return None
+    
+    def load_initial_map(self, map_packet):
+        self.map.map_decoding(map_packet)
+
     def update_units(self, unit_packet):
         #unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
         unit_info = unit_packet.strip().split(';')
@@ -189,7 +193,7 @@ class GameEngine:
                     break
                 Building.kill_building(player, player.building, self.map)
             
-    def update_map(self, packets):
+    def update_game(self, packets):
         packets = packets.split("\n")
         for packet in packets:
             if "building" in packet:
@@ -533,7 +537,8 @@ class GameEngine:
                             print(unit.position)
 
                 elif key == ord('i'):
-                    self.map.update_initial_map(self.players[0].package.map)
+                    self.load_initial_map(".29G1.51G1.38/.105G1.14/.66G1.53/.19W1.36G1.63/.17W6.52W4.1W1.39/.2G1.14W6.52W6.21G1.17/.19W5.56W1.19G1.19/.22W2.78G1.17/.22W2.30G1.65/.21W4.35G1.59/.17W7.81G1.14/.17W1.2W4.23G1.72/.22W1.35G1.61/.120/.31G1.41G1.43G1.2/.120/.18G1.101/.120/.97G1.22/.40G1.79/.120/.40G1.79/.42G1.4G1.72/.120/.72W2.46/.72W3.31G1.13/.16G1.14W3.32G1.5W2.46/.1G1.27W3.1W1.39W1.46/.29W3.1W1.38W2.46/.28G1W5.38W1.26G1.20/.30W4.44G1.41/.31W1.72G1.15/.31W1.88/.11G1.6G1.8W2.2W1.88/.28W4.79G1.8/.16G1.11W2.35G1.54/.29W1.79G1.10/.29W3.34G1.16G1.34G1.1/.29W3.37W2.26G1.22/.6G1.3G1.17W2.38W4.48/.29W2.36W5.36W2.10/.14G1.14W2.36W5.35W3.10/.29W1.39W3.34W3.11/.29W3.38W1.35W2.12/.19G1.11W2.70G1.2W2.6G1.5/.19G1.100/.120/.103G1.7G1.8/.19G1.35G1.64/.78G1.41/G1.24G1.60W3.31/.43G1.43W3.30/.1G1.11G1.4G1.66W4.1G1.29/.53G1.24W1.6W4.13W1.17/.56G1.21W1.7W2.14W4.14/.19G1.56W5.21W4.14/.5G2.23W2.45W2.1W4.16G1.1W3.4G1.10/.28W6.39W1.1G1W3.1W2G1.19W1.1W1.15/.27W4.2W1.37W3.2W2.42/.24W4.5W3.16G1.16W5.46/G1.19W8.5W3.27G1.6W4.46/.7W1.15W2.1W2.5W3.35W5.2G1.41/.6W2.3W2.11W1.1W2.44W5.2G1.38G1.1/.6W2.4W2.9W4.45W2.19G1.26/.5W3.3W3.10W3.1W1.8G1.82/.5W3.2W3.11W5.91/.6W2.3W1.108/.4W4.112/.4W5.35G1.7W1.21G1.45/.4W2.44W3.21G1.8G1.36/W2.2W2.44W2.68/W3.48W1.68/W3.48W2.33G1.33/.2W3.28G1.15W4.4W1.62/.2G1.1W1.43W2.3W5.31G1.30/.2W3.19G1.22W2.4W5.62/.48W2.3W1.2W2.19W2.41/.31G1.7G1.5G1.7W1.1W3.18W6.22W1.15/.76W3G1W3.19W4.14/.18G1.13W1.43W1.5W1.19W4.14/.32W1.48W2.20W3.14/.16G1.12W5.67W5.14/.28W1G1W3.37G1.9G1.23W1.15/.29W2.6G1.82/.29W2.26G1.18G1.43/.30W1.89/.55W2.63/.54W3.56W3.4/.23G1W1.29W1.3W1.53W4.4/.23W3.3G1.24W1.3W1.3G1.49W2.6/.23W1.1W1.15G1.12W5.13G1.39W2.6/.23W7.25W4.16W1.44/.23W2.1W2.27W1.1W1.15W4.27W2.14/.55W3.15W3.28W3.13/.41G1.13W3.15W3.28W3.13/.54W2.17W2.29W1.15/.71W3.4G1.25W1.15/.23W4.44W2.31W1.15/.8W1.15W3.1G1W4.38W2.31W1.15/.7W2.16W4.1W4.70W1.15/G1.5W3.1W1.9G1.10W1.71W2.15/.5W6.20W3.61G1.24/.5W5.73G1.36/.7W3.19G1.17G1.2G1.4W3.62/.9W1.9G1.35W3.17G1.44/.9W4.40W5.29G1.32/.12W1.40W3.20G1.43/.5G1.6W6.36W2.64/.55W2.1W2.14G1.27G1.17/.56W3.61/.2G1.117/.10G1.53G1.55/.9G1.110/.120/.120/.120/.20G1.20G1.21G1.56/.120/.58G1.61/.5G1.114")
+
                 elif key == ord('o'):
                     self.send_data = not self.send_data
 
