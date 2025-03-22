@@ -14,35 +14,22 @@ class DataProcessor:
             self.game_engine = None
             self.packet_manager = PacketManager()
     
-    def initiate_sync(self):
-        
-        ## Send a request to the server to initialize the engine
-        self.packet_manager.send_packet("initialize_engine_request")
-        ## Wait for the server to respond with the corresonding civilisation, number of players and mode
-        self.packet_manager.receive()
-        self.setup_engine()
-        ## Send a request to the server to initialize the map, to r correct the current resources and units
-        PacketManager().send_packet("initialize_map_request")
-        ## Wait for the server to respond with the resources
-        self.packet_manager.receive()
-        self.update_data()
-        ## Send a request to the server to initialize the units and buildings
-        self.packet_manager.send_packet("initialize_units_request")
-        ## Wait for the server to respond with the units and buildings
-        self.packet_manager.receive()
-        self.update_data()
-        
-        pass
 
-    def update_data(self, init=False):
+    def update_data(self):
         packet =self.packet_manager.receive_packet()
-        self.packet_manager.process_packet(packet)
-        if not init:
+        print("Received: ",packet)
+        if packet:
+            self.packet_manager.process_packet(packet)
+            print ("Processed: ",packet)
             for row in packet:
+                print(row)
                 match row[1]:
                     case "place_unit"| "remove_unit" | "place_building" | "remove_building":
                         self.game_engine.update_map(row)
-
+                    case "scan_rooms":
+                        if self.packet_manager.player.id == 0:
+                            return row
+            return None
 
     def setup_engine(self):
         pass

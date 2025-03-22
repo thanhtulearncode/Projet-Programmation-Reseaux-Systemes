@@ -41,6 +41,8 @@ class GameEngine:
         self.ias = [IA(player, player.ai_profile, self.map, time.time()) for player in self.players]  # Instantiate IA for each player
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
+            print(f"Player {i+1} AI profile: {self.players[i].ai}")
+            print(f"Player {i+1} AI: {self.ias[i]}")
         self.IA_used = False
 
         # Sauvegarde related attributes
@@ -567,17 +569,16 @@ class GameEngine:
                         else:
                             pass
                             #processor.update_data()
-                        if player.id==0:
-                            request = DataProcessor().update_data(True)
-                            if request:
-                                if request[1] == "scan_rooms":
-                                    PacketManager().package =  f"{GameRoom().number_of_players};{GameRoom().game_mode};{GameRoom().map_size[0]};{GameRoom.map_size[1]};{GameRoom().player_count};{GameRoom().civilisation};{GameRoom().ai_mode}"
-                                    PacketManager().send_packet()
-                                else:
-                                    requesting_played_id = request[0]
-                                    resources = None ##TODO
-                                    PacketManager().package = (Resource_manager().create_init_resource_response(requesting_played_id,resources))
-                                    PacketManager().send_packet()
+                        request = DataProcessor().update_data() 
+                        if request:
+                            if request[1] == "scan_rooms":
+                                PacketManager().package =  f"{GameRoom().number_of_players};{GameRoom().game_mode};{GameRoom().map_size[0]};{GameRoom.map_size[1]};{GameRoom().player_count};{GameRoom().civilisation};{GameRoom().ai_mode}"
+                                PacketManager().send_packet()
+                            else:
+                                requesting_played_id = request[0]
+                                resources = None ##TODO
+                                PacketManager().package = (Resource_manager().create_init_resource_response(requesting_played_id,resources))
+                                PacketManager().send_packet()
                                 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

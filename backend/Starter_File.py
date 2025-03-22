@@ -814,7 +814,7 @@ def start_menu(save_file=None):
             
             if player_settings:
                 for i, settings in enumerate(player_settings):
-                    player_id = i + 1
+                    player_id = i
                     new_player = Player(
                         f'Player {player_id}',
                         settings['civilization'],
@@ -858,7 +858,9 @@ def start_menu(save_file=None):
         print("Exiting game")
         sys.exit()
     else: ## Multiplayer option
-        game_room= GameRoomManager(DataProcessor()).scan_rooms()
+        grm= GameRoomManager(DataProcessor())
+        game_room= grm.scan_rooms()
+        print("game room info:",game_room)
         if not game_room:
             settings_menu = GameSettingsMenu()
             settings = settings_menu.run()
@@ -879,7 +881,7 @@ def start_menu(save_file=None):
                 
                 if player_settings:
                     for i, settings in enumerate(player_settings):
-                        player_id = i + 1
+                        player_id = i 
                         new_player = Player(
                             f'Player {player_id}',
                             settings['civilization'],
@@ -892,7 +894,7 @@ def start_menu(save_file=None):
                     this_player = players[0]
                     PacketManager().set_player_port(this_player)
                     Resource_manager(this_player)
-                    GameRoom(num_players, GameMode, map_size, this_player.civilisation, this_player.ai_mode)
+                    GameRoom(num_players, GameMode, map_size, this_player.civilization, this_player.ai_profile)
                     game_engine = GameEngine(
                         game_mode=GameMode,
                         map_size=map_size,
@@ -913,7 +915,7 @@ def start_menu(save_file=None):
             multi_player = True
             players.clear()
             for i in range(num_players):
-                player_id = i + 1
+                player_id = i 
                 new_player = Player(
                     f'Player {player_id}',
                     game_room.civilisation,
@@ -923,7 +925,7 @@ def start_menu(save_file=None):
                 players.append(new_player)
             pygame.quit()
             this_player = players[game_room.player_count]
-            PacketManager(this_player)
+            PacketManager().set_player_port(this_player)
             from Game_Engine import GameEngine
             game_engine = GameEngine(
                 game_mode=GameMode,
