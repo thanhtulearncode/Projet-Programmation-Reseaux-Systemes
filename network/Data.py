@@ -41,10 +41,6 @@ class PacketManager:
                 self.server_port = 8080
             PacketManager._initialized = True
     @classmethod
-    def set_player_port(self, player):
-        self.player = player
-        ##self.server_port = 8080 + player.id
-    @classmethod
     def create_unit_packet(self, unit, type):
         unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
         unit.player.package.package += f"{unit_packet}\n"
@@ -58,7 +54,7 @@ class PacketManager:
             data = data.rstrip('*')
             
         items = data.split('*')
-        
+
         for item in items:
             if item.strip():  # Skip empty items
                 parts = item.strip().split(';')
@@ -134,7 +130,7 @@ class PacketManager:
             sys.exit(1)
 
         while True:    
-            readable, _, _ = select.select([self.socket], [], [],0)
+            readable, _, _ = select.select([self.socket], [], [],5)
             received_packets = None
             for sock in readable:
                 if sock == self.socket:
@@ -156,12 +152,15 @@ class Resource_manager:
         if not hasattr(self, '_initialized'):
             self._initialized = True
             self.player = player
-
+        else:
+            self.player = player  # Ensure self.player is updated if already initialized
+        print("Resource Manager initialized for player", self.player)
+    @classmethod
     def create_init_resource_request(self, target_player_id=0):
-        return f"{self.player.id};{target_player_id}"
-
+        return f"{self._instance.player};{target_player_id}"
+    @classmethod
     def create_init_resource_response(self, requesting_player_id, resources):
-        if self.player.id == 0: 
+        if self._instance.player.id == 0: 
             resource_values = [str(amount) for amount in resources.values()]
             resource_str = ";".join(resource_values)
             return f"{requesting_player_id};{resource_str}"

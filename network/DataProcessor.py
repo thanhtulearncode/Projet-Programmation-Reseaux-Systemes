@@ -19,15 +19,15 @@ class DataProcessor:
         packet =self.packet_manager.receive_packet()
         print("Received: ",packet)
         if packet:
-            self.packet_manager.process_packet(packet)
+            packet= self.packet_manager.process_packet(packet)
             print ("Processed: ",packet)
-            for row in packet:
+            for row in [row for row in packet if len(row) > 1]:
                 print(row)
                 match row[1]:
                     case "place_unit"| "remove_unit" | "place_building" | "remove_building":
                         self.game_engine.update_map(row)
-                    case "scan_rooms":
-                        if self.packet_manager.player.id == 0:
+                    case default:
+                        if not self.packet_manager.player or self.packet_manager.player.id == 0:
                             return row
             return None
 

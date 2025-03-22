@@ -572,12 +572,13 @@ class GameEngine:
                         request = DataProcessor().update_data() 
                         if request:
                             if request[1] == "scan_rooms":
-                                PacketManager().package =  f"{GameRoom().number_of_players};{GameRoom().game_mode};{GameRoom().map_size[0]};{GameRoom.map_size[1]};{GameRoom().player_count};{GameRoom().civilisation};{GameRoom().ai_mode}"
+                                gr= GameRoom()
+                                PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
                                 PacketManager().send_packet()
                             else:
                                 requesting_played_id = request[0]
                                 resources = None ##TODO
-                                PacketManager().package = (Resource_manager().create_init_resource_response(requesting_played_id,resources))
+                                PacketManager().package = (Resource_manager.create_init_resource_response(requesting_played_id,resources))
                                 PacketManager().send_packet()
                                 
                 # Clear the screen and display the new part of the map after moving

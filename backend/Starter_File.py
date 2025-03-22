@@ -892,9 +892,10 @@ def start_menu(save_file=None):
                     
                     pygame.quit()
                     this_player = players[0]
-                    PacketManager().set_player_port(this_player)
+                    PacketManager().player = this_player
+                    print("this player:",this_player)
                     Resource_manager(this_player)
-                    GameRoom(num_players, GameMode, map_size, this_player.civilization, this_player.ai_profile)
+                    game_room = GameRoom(num_players, GameMode, map_size, this_player.civilization, this_player.ai_profile)
                     game_engine = GameEngine(
                         game_mode=GameMode,
                         map_size=map_size,
@@ -918,14 +919,14 @@ def start_menu(save_file=None):
                 player_id = i 
                 new_player = Player(
                     f'Player {player_id}',
-                    game_room.civilisation,
+                    game_room.civilization,
                     game_room.ai_mode,
                     player_id=player_id
                 )
-                players.append(new_player)
+                players.append(new_player)  
             pygame.quit()
             this_player = players[game_room.player_count]
-            PacketManager().set_player_port(this_player)
+            PacketManager().player = this_player
             from Game_Engine import GameEngine
             game_engine = GameEngine(
                 game_mode=GameMode,
@@ -933,10 +934,11 @@ def start_menu(save_file=None):
                 players=players,
                 sauvegarde=False )
             DataProcessor().game_engine = game_engine
-            PacketManager().package=Resource_manager(this_player).create_init_resource_request()
+            Resource_manager(this_player)
+            PacketManager().package = Resource_manager.create_init_resource_request()
             PacketManager().send_packet()
-            DataProcessor().update_data(this_player, True)
-            curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.player_id))
+            DataProcessor().update_data()
+            curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.id))
             
 
 

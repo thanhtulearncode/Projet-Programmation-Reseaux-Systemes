@@ -16,24 +16,26 @@ class GameRoomManager:
         packet_manager = self.data_processor.packet_manager
         packet_manager.package = f"1;scan_rooms"
         packet_manager.send_packet()
-        respond= self.data_processor.update_data()
+        respond = self.data_processor.update_data()
+        print("The respond: ",respond)
         if not respond:
             return None
         else:
-            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilisation, ai_mode = respond
-            map_size = (map_size_x, map_size_y)
-            gameroom = GameRoom(int(number_of_players), game_mode, map_size, civilisation, ai_mode)
-            gameroom.player_count = player_count
+            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilization, ai_mode = respond
+            map_size = (int(map_size_x), int(map_size_y))
+            gameroom = GameRoom(int(number_of_players), game_mode, map_size, civilization, ai_mode)
+            gameroom.player_count = int(player_count)
             return gameroom
         
 class GameRoom:
     _instance = None
+
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(GameRoom, cls).__new__(cls)
         return cls._instance
-    
-    def __init__(self, number_of_players, game_mode, map_size, civilisation, ai_mode):
+
+    def __init__(self, number_of_players=None, game_mode=None, map_size=None, civilization=None, ai_mode=None):
         if not hasattr(self, 'initialized'):
             self.initialized = True
             self.room_id = "1"
@@ -41,6 +43,7 @@ class GameRoom:
             self.player_count = 0
             self.game_mode = game_mode
             self.map_size = map_size
-            self.civilisation = civilisation
+            self.civilization = civilization
             self.ai_mode = ai_mode
-        
+
+# Create a global instance of GameRoom
