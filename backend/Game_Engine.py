@@ -108,7 +108,7 @@ class GameEngine:
                 return player
         return None
     def update_units(self, unit_packet):
-        #unit_packet = f"{type}{unit.name};{unit.position[0]};{unit.position[1]};{unit.health};{unit.player.id}"
+        #unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
         unit_info = unit_packet.strip().split(';')
         print(unit_info)
         type = unit_info[0]
@@ -117,6 +117,8 @@ class GameEngine:
         unit_health = int(unit_info[4])
         player_id = int(unit_info[5])
         player = self.get_player_by_id(player_id)
+        unit_task = unit_info[6]
+        unit_direction = unit_info[7]
         if type == "spawn_unit":
             unit_position = int(unit_position[0]), int(unit_position[1])
             if unit_name == "Swordsman":
@@ -134,6 +136,8 @@ class GameEngine:
                 if unit.name == unit_name:
                     unit.position = unit_position
                     unit.hp = unit_health  
+                    unit.task = unit_task
+                    unit.direction = unit_direction
                     self.map.place_unit(int(unit_position[0]), int(unit_position[1]), unit)
                     break
 
@@ -501,18 +505,22 @@ class GameEngine:
 
                 ###### TEST KEYS #######
                 elif key == ord('r'):
+                    """
                     for player in self.players:
                         print(player.package.map)
                         print(player.package.package)
                         player.package.map=""
                         player.package.package=""
+                    """
                     Building.place_starting_buildings(self.map)   # Place starting town centers on the map
                     Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
                 elif key == ord('t'):
-                    self.update_units("kill_unit;Igor;35;103;25;2")
+                    self.update_units("spawn_unit;Villager;25;105;25;1;None;south")
                 elif key == ord('y'):
-                    self.update_units("remove_unit;Thibaud;41;107;25;2")
-                    self.update_units("place_unit;Thibaud;41;108;25;2")
+                    self.update_units("remove_unit;Villager;25;105;25;1;going_to_construction_site;southwest")
+                    self.update_units("place_unit;Villager;24;106;25;1;going_to_construction_site;southwest")
+                    self.update_units("remove_unit;Villager;24;106;25;1;going_to_construction_site;southwest")
+                    self.update_units("place_unit;Villager;23;107;25;1;going_to_construction_site;southwest")
                     print("yes")
                 elif key == ord('u'):
                     packets = "spawn_building;Town Center;114;60;1000;1\nspawn_building;Town Center;36;107;1000;2\nspawn_building;Town Center;34;15;1000;3\nspawn_unit;Leopold;116;58;25;1\nspawn_unit;Adriana;113;61;25;1\nspawn_unit;Mohammed;111;63;25;1\nspawn_unit;Fran?ois/François;33;107;25;2\nspawn_unit;Igor;35;103;25;2\nspawn_unit;Thibaud;41;107;25;2\nspawn_unit;Johnny;38;18;25;3\nspawn_unit;Clement;29;15;25;3\nspawn_unit;Rosy;30;18;25;3"

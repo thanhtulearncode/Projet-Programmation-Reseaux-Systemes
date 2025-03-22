@@ -75,11 +75,9 @@ class PacketManager:
         resource_packet = f"{type};{resource.type};{x};{y};{resource.amount}"
         print(resource_packet)
         
-
-    
     @classmethod
     def create_unit_packet(self, unit, type):
-        unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
+        unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
         unit.player.package.package += f"{unit_packet}\n"
         #print(unit_packet) += f"{resource_packet}\n"
     

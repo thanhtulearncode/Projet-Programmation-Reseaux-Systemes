@@ -1,3 +1,7 @@
+Huy
+Khanh
+Lam
+Tri
 Abdallah 
 Abdel 
 Ghali 
@@ -106,7 +110,7 @@ Anne-Claire
 Anne-Clotilde 
 Anne-Cecile 
 Anne-France 
-Anne-Françoise 
+Anne-Franï¿½oise 
 Anne-Gaelle 
 Anne-Josephine 
 Anne-Laure 
@@ -186,7 +190,7 @@ Bertrand
 Betty 
 Bianca 
 Bill 
-Björn 
+Bjï¿½rn 
 Blaise 
 Blanche 
 Blandine 
@@ -389,7 +393,7 @@ Eve
 Eveline 
 Evelyn 
 Evelyne 
-FX/François-Xavier
+FX/Franï¿½ois-Xavier
 Fabian 
 Fabien 
 Fabienne 
@@ -420,9 +424,9 @@ Florence
 Florent 
 Florian 
 Floriane 
-Fran?ois/François
-Fran\ois/François
-Franc-Xavier/François-Xavier
+Fran?ois/Franï¿½ois
+Fran\ois/Franï¿½ois
+Franc-Xavier/Franï¿½ois-Xavier
 France 
 Francesca 
 Francesco 
@@ -435,11 +439,11 @@ Frank
 Frantz 
 Franz-Georg 
 Franz 
-Françoi/François
-François-Xav/François-Xavier
-François-Xavier 
-François 
-Françoise 
+Franï¿½oi/Franï¿½ois
+Franï¿½ois-Xav/Franï¿½ois-Xavier
+Franï¿½ois-Xavier 
+Franï¿½ois 
+Franï¿½oise 
 Fred 
 Freddy 
 Frederica 
@@ -507,7 +511,7 @@ Gonzague
 Gordon 
 Gottfried 
 Graham 
-Grâce 
+Grï¿½ce 
 Gregoire 
 Gregor 
 Gregory 
@@ -566,7 +570,7 @@ Isabelle
 Isidore 
 Issam 
 Ivan 
-J-François/Jean-François
+J-Franï¿½ois/Jean-Franï¿½ois
 J M  
 J M/J M 
 J P  
@@ -609,7 +613,7 @@ Jean-Dominique
 Jean-Eric 
 Jean-Eudes 
 Jean-Francis 
-Jean-François 
+Jean-Franï¿½ois 
 Jean-Frederic 
 Jean-Gabriel 
 Jean-Georges 
@@ -712,7 +716,7 @@ Jullien/Julien
 Jurgen 
 Justine 
 Jeremie 
-Jerôme 
+Jerï¿½me 
 Jesus 
 Kadyja 
 Kamel 
@@ -866,7 +870,7 @@ Marie-Dominique
 Marie-Evelyn 
 Marie-Florence 
 Marie-France 
-Marie-Françoise 
+Marie-Franï¿½oise 
 Marie-Gabrielle 
 Marie-Helene 
 Marie-Isabelle 
@@ -1067,7 +1071,7 @@ Pierre-Arnaud
 Pierre-Emmanuel 
 Pierre-Eric 
 Pierre-Fabre 
-Pierre-François 
+Pierre-Franï¿½ois 
 Pierre-Guy 
 Pierre-Henri 
 Pierre-Jean 
@@ -1320,7 +1324,7 @@ Yolene
 Youssef 
 Yvan 
 Yveline 
-Yves-François 
+Yves-Franï¿½ois 
 Yves-Marie 
 Yves 
 Yvette 
