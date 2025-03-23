@@ -937,7 +937,7 @@ def start_menu(save_file=None):
             Resource_manager(this_player)
             PacketManager().package = Resource_manager.create_init_resource_request()
             PacketManager().send_packet()
-            DataProcessor().update_data()
+            DataProcessor().update_data(True)
             curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.id))
             
 

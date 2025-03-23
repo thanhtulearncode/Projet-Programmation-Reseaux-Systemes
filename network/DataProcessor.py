@@ -15,8 +15,11 @@ class DataProcessor:
             self.packet_manager = PacketManager()
     
 
-    def update_data(self):
-        packet =self.packet_manager.receive_packet()
+    def update_data(self, wait = False):
+        if not wait:
+            packet =self.packet_manager.receive_packet()
+        else:
+            packet = self.packet_manager.receive_packet(2)
         print("Received: ",packet)
         if packet:
             packet= self.packet_manager.process_packet(packet)

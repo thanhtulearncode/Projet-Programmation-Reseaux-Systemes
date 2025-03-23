@@ -6,7 +6,7 @@ import sys
 import subprocess
 from time import sleep
 
-BUF = 512
+BUF = 12000
 SERVER_IP = "127.0.0.1"
 class PacketManager:
     _instance = None 
@@ -35,7 +35,7 @@ class PacketManager:
                 current_number += 1
                 with open("../network/current_players.txt", "w") as file:
                     file.write(str(current_number))
-                sleep(1.5)
+                sleep(2)
             except (FileNotFoundError, ValueError) as e:
                 print(f"Error reading or updating current_players.txt: {e}")
                 self.server_port = 8080
@@ -105,14 +105,14 @@ class PacketManager:
             print(f"Erreur lors de l'envoi du message: {e}")
         self.package = ""
 
-    def receive_packet(self)-> str:
+    def receive_packet(self, time_out = 0)-> str:
         try:
             self.socket.setblocking(False)  
         except socket.error as e:
             sys.exit(1)
 
         while True:    
-            readable, _, _ = select.select([self.socket], [], [],0)
+            readable, _, _ = select.select([self.socket], [], [], time_out)
             received_packets = None
             for sock in readable:
                 if sock == self.socket:
