@@ -24,9 +24,16 @@ class GameRoomManager:
         if not respond:
             return None
         else:
-            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilization, ai_mode = respond
+            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilization, ai_mode, password = respond
             map_size = (int(map_size_x), int(map_size_y))
-            gameroom = GameRoom(int(number_of_players), game_mode, map_size, civilization, ai_mode)
+            gameroom = GameRoom(
+                number_of_players=int(number_of_players), 
+                game_mode=game_mode, 
+                map_size=map_size, 
+                civilization=civilization, 
+                ai_mode=ai_mode,
+                password=password
+            )
             gameroom.player_count = int(player_count)
             return gameroom
         
@@ -38,7 +45,7 @@ class GameRoom:
             cls._instance = super(GameRoom, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, number_of_players=None, game_mode=None, map_size=None, civilization=None, ai_mode=None):
+    def __init__(self, number_of_players=None, game_mode=None, map_size=None, civilization=None, ai_mode=None, password=None):
         if not hasattr(self, 'initialized'):
             self.initialized = True
             self.room_id = "1"
@@ -48,5 +55,23 @@ class GameRoom:
             self.map_size = map_size
             self.civilization = civilization
             self.ai_mode = ai_mode
+            self.password = password
+            self.players = []
+            self.host_id = None
+
+    def add_player(self, player_id):
+        if len(self.players) < self.number_of_players:
+            self.players.append(player_id)
+            self.player_count += 1
+            if not self.host_id:  # First player becomes host
+                self.host_id = player_id
+            return True
+        return False
+
+    def verify_password(self, password):
+        return self.password == password
+
+    def is_host(self, player_id):
+        return player_id == self.host_id
 
 # Create a global instance of GameRoom
