@@ -28,7 +28,17 @@ from IA import IA
 
 # GameEngine Class
 class GameEngine:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(GameEngine, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, game_mode, map_size, players, sauvegarde=False):
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+        self._initialized = True
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -660,7 +670,7 @@ class GameEngine:
                             else:
                                 requesting_played_id = request[0]
                                 resources = None ##TODO
-                                PacketManager().package = (Resource_manager.create_init_resource_response(requesting_played_id,resources))
+                                ##PacketManager().package = (Resource_manager.create_init_resource_response(requesting_played_id,resources))
                                 PacketManager().send_packet()
                                 
                 # Clear the screen and display the new part of the map after moving

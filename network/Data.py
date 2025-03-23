@@ -78,16 +78,10 @@ class PacketManager:
         unit.player.package.package += f"{unit_packet}\n"
         print(unit_packet)
                 
-    @staticmethod
-    def process_packet(data) -> list:
-        result = []
-        items = data.split('\n')
-    
-        for item in items:
-            if item.strip():  # Skip empty items
-                result.append(item.strip().split(';'))
-    
-        return result
+    def create_building_packet(self, building, type):
+        building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
+        building.player.package.package += f"{building_packet}\n"
+        #print(building_packet)
         
     def extract_package(self, row):
         PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
@@ -145,7 +139,7 @@ class Resource_manager:
         print("Resource Manager initialized for player", self.player)
     @classmethod
     def create_init_resource_request(self, target_player_id=0):
-        return f"{self._instance.player};{target_player_id}"
+        return f"{self._instance.player.id};{target_player_id}"
     @classmethod
     def create_init_resource_response(self, requesting_player_id, resources):
         if self._instance.player.id == 0: 
