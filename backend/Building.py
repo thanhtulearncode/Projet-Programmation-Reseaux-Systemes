@@ -106,8 +106,8 @@ class Building:
             debug_print(f"Building {building_to_kill} belonging to {player.name} at ({x}, {y}) killed.", 'DarkBlue')
         else:
             debug_print(f"Building {building_to_kill} does not belong to {player.name}.", 'Yellow')
-    
-    def get_building_by_symbol(symbol):
+
+    def get_building_by_symbol(self, symbol):
         if symbol == 'T':
             return TownCenter
         elif symbol == 'H':
@@ -295,7 +295,7 @@ class Keep(Building):
 class Construct(Building):
     def __init__(self, player):
         super().__init__(player, "Construct", hp=1, build_time=0, cost={"Wood": 1}, size=2)
-        self.symbol = 'O'
+        self.symbol = '%'
         self.sprite = "construct"
         self.future_building = None
         self.workers = []

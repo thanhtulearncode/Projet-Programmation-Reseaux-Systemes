@@ -21,26 +21,39 @@ Dans la fenêtre Modifier la variable d'environnement, sélectionnez Nouveau et 
 6. Redémarrez tonton ordinateur et vscode
 
 
-SERVEUR UPD sur WINDOWS:
+SERVEUR UPD BROADCAST sur WINDOWS: 
+broadserv.c 
 broadserv.c
 
 Compiler:
-gcc -o broadserv broadserv.c -lws2_32 -liphlpapi
+gcc -o broadserv broadserv.c -lws2_32 -liphlpapi    
 
-Communication inter-server: port 8080
-             client-server: port 8081
+Communication inter-server:  port 8080
+Communication server-client: port 8081
 
-Avant execute:
-Ajoute nouvelle regle pour le pare-feu Window
+Ajoute règle pour par-feu Window:
+Cmd: 
+netsh advfirewall firewall add rule name="Allow UDP Port" protocol=UDP dir=in localport=8080 action=allow profile=private
+Powershell:
+New-NetFirewallRule -DisplayName "Allow UDP Port" -Direction Inbound -Protocol UDP -Action Allow -LocalPort 8080 -Profile Private
 
-1. Execute Powershell en tant qu'administrateur
+!!!REMARQUE: 
+le client doit envoyer un message au server pour etablir une connection
+UNE SEULE broadcast serveur sur un ordinateur
 
-2. New-NetFirewallRule -DisplayName "Allow UDP Ports" -Direction Inbound -Profile Private -Protocol UDP -LocalPort 8080 -Action Allow
+SERVEUR SUR 1 MACHINE
+servudp.c
+gcc -o udp servudp.c -lws2_32
 
+Execute:
+.\udp.exe ID
 
-!!! REMARQUE:
-UNE SEULE serveur sur une machine
-la client doit envoyer un message au server pour etablir une connection
+Serveur ecoute sur 2 ports: Port 808x (pour processus python) 
+                            Port 809x (pour processus C)
+                            x: ID
+Exemple: .\udp.exe 1 écoute sur 2 port 8081 et 8091
 
-For test sur le branche test_netwwork: broadserv.c > listen.py > test.py
-For le test sur main : broadserv.c ( si local network) ou si localhost udpserv.c
+!!!REMARQUE:
+ - Le client python doit envoyer le message au bon port c.a.d 808x
+ - Si le message dépasse le buffer, le serveur ne peut pas le recevoir. Meme principle pour le client
+    Pour le recevoir il faut augmenter la taille de buffer

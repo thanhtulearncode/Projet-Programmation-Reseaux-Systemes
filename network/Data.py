@@ -1,55 +1,65 @@
 import csv
+from ctypes import WinError
+import socket
+import select
+import sys
+import subprocess
+from time import sleep
 
+BUF = 512
+SERVER_IP = "127.0.0.1"
 class PacketManager:
     _instance = None 
-    package_header = "" 
+    package_header = ""   
     _initialized = False  
-    def __new__(cls, player):
+    def __new__(cls):
         if cls._instance is None:
             cls._instance = super(PacketManager, cls).__new__(cls)
-            cls._instance.player = player
+            cls._instance.player = None
             cls._instance.package = ""
         return cls._instance
     
-    def __init__(self, player):
+    def __init__(self):
         if not PacketManager._initialized:
-            self.player = player
+            self.player = None
             self.package = ""
-            self.socket = None
-            self.server_address = "127.0.0.1"
-            self.server_port = 8081
-            self.resources_map = ""
+            self.map = None
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.server_address = ("127.0.0.1")
+            try:
+                with open("../network/current_players.txt", "r") as file:
+                    current_number = int(file.read().strip())
+                port_id = current_number % 8
+                self.server_port = 8080 + port_id
+                process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)], creationflags=subprocess.CREATE_NEW_CONSOLE)
+                current_number += 1
+                with open("../network/current_players.txt", "w") as file:
+                    file.write(str(current_number))
+                sleep(1.5)
+            except (FileNotFoundError, ValueError) as e:
+                print(f"Error reading or updating current_players.txt: {e}")
+                self.server_port = 8080
             PacketManager._initialized = True
         
-    def create_packet(self, object, update_type, amount=0, attacked_by=None):
-        pass
-        """start_x = object.position[0]
-        start_y = object.position[1]
-        PacketManager.package_header = f"{self.player.id};{update_type};{object.id};{start_x};{start_y}"
+    @staticmethod
+    def process_packet(data) -> list:
+        result = []
+        # Remove trailing asterisk if only one message
+        if data.count('*') <= 1:
+            data = data.rstrip('*')
+            
+        items = data.split('*')
+
+        for item in items:
+            if item.strip():  # Skip empty items
+                parts = item.strip().split(';')
+                # Check if first element is a number
+                if parts and parts[0].isdigit():
+                    result.append(parts)
+                else:
+                    result.append(['None'])
         
-        match update_type:
-            case "place_unit" | "remove_unit" | "place_building" | "remove_building":
-                self.package += f"{PacketManager.package_header}\n"
-        case "attacked":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'attacked_by': attacked_by.name if attacked_by else None,
-                    'amount': amount
-                }
-                print(object_info)
-            case "resource_gathered" | "food_gathered":
-                object_info = {
-                    'player_id': object.player.id,
-                    'unit_name': object.name,
-                    'amount': amount
-                }
-                print(object_info)"""
-        
-        if self.package:
-            with open("spawner_test_output.csv", mode="a", newline="") as file:
-                writer = csv.writer(file, delimiter=';', quoting=csv.QUOTE_ALL)
-                writer.writerow(self.package.strip().split(";"))
+        return result
     
     @classmethod
     def create_map_packet(self, map):
@@ -66,13 +76,7 @@ class PacketManager:
     def create_unit_packet(self, unit, type):
         unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
         unit.player.package.package += f"{unit_packet}\n"
-        #print(unit_packet) += f"{resource_packet}\n"
-    
-    @classmethod
-    def create_building_packet(self, building, type):
-        building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
-        building.player.package.package += f"{building_packet}\n"
-        #print(building_packet)
+        print(unit_packet)
                 
     @staticmethod
     def process_packet(data) -> list:
@@ -93,20 +97,61 @@ class PacketManager:
         with open(file_name, mode="r") as file:
             reader = csv.reader(file, delimiter=';')
             next(reader, None) 
+            next(reader, None) 
             for row in reader:
                 package_header = self.extract_package(row)
                 print(package_header)
                 
     #send self.package to the server
     def send_packet(self):
+        self.socket.setblocking(False)
         try:
-            self.socket.sendto(self.package.encode(), (self.server_address, self.server_port))
-            self.package = ""
-        except Exception as e:
-            pass
-        pass
-        
-    def receive_packet(self)-> str:
-        pass
+            self.socket.sendto(self.package.encode('utf-8'), (SERVER_IP, self.server_port))
+            print(f"Message envoyé au serveur")
+        except socket.error as e:
+            print(f"Erreur lors de l'envoi du message: {e}")
 
-print(PacketManager.process_packet('2;remove_unit;2.v.515;31.2;109.717*2;place_unit;2.v.516;31.28;109.7*2;remove_unit;2.v.516;31.56;109.43*2;place_unit;2.v.517;31.56476911874513;109.43523088125487*2;remove_unit;2.v.517;31.85568622330503;109.14431377669497'))
+    def receive_packet(self)-> str:
+        try:
+            self.socket.setblocking(False)  
+        except socket.error as e:
+            sys.exit(1)
+
+        while True:    
+            readable, _, _ = select.select([self.socket], [], [],0)
+            received_packets = None
+            for sock in readable:
+                if sock == self.socket:
+                    
+                    received_packets,_= self.socket.recvfrom(BUF)
+
+            return received_packets.decode('utf-8') if received_packets else None
+    
+class Resource_manager:
+    _instance = None
+
+    def __new__(cls, player):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.player = player
+        return cls._instance
+    
+    def __init__(self, player):
+        if not hasattr(self, '_initialized'):
+            self._initialized = True
+            self.player = player
+        else:
+            self.player = player  # Ensure self.player is updated if already initialized
+        print("Resource Manager initialized for player", self.player)
+    @classmethod
+    def create_init_resource_request(self, target_player_id=0):
+        return f"{self._instance.player};{target_player_id}"
+    @classmethod
+    def create_init_resource_response(self, requesting_player_id, resources):
+        if self._instance.player.id == 0: 
+            resource_values = [str(amount) for amount in resources.values()]
+            resource_str = ";".join(resource_values)
+            return f"{requesting_player_id};{resource_str}"
+        return None
+
+print(PacketManager.process_packet(';remove_unit;2.v.515;31.2;109.717*;remove_unit;2.v.515;31.2;109.717*'))

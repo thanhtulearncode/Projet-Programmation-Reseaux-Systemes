@@ -14,6 +14,7 @@ from Actions import *
 from frontend.Terrain import Map
 from network.Data import *
 from network.DataProcessor import DataProcessor
+from network.Game_Room import *
 try:
     from frontend import gui
     USE_PYGAME = True
@@ -27,18 +28,7 @@ from IA import IA
 
 # GameEngine Class
 class GameEngine:
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(GameEngine, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self, game_mode, map_size, players, sauvegarde=False):
-        if hasattr(self, '_initialized') and self._initialized:
-            return
-        self._initialized = True
-
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -51,6 +41,8 @@ class GameEngine:
         self.ias = [IA(player, player.ai_profile, self.map, time.time()) for player in self.players]  # Instantiate IA for each player
         for i in range(len(self.players)):
             self.players[i].ai = self.ias[i]
+            print(f"Player {i+1} AI profile: {self.players[i].ai}")
+            print(f"Player {i+1} AI: {self.ias[i]}")
         self.IA_used = False
         self.send_data = False
 
@@ -469,15 +461,20 @@ class GameEngine:
             self.debug_print(f"Error loading game: {e}")
 
     def run_multi_player(self, stdscr, this_player_id):
+        # Get terminal size
+        terminal_height, terminal_width = stdscr.getmaxyx()
+        
+        # Adjust viewport size to fit terminal
+        viewport_width = min(30, terminal_width // 2)  # Divide by 2 because each tile takes 2 chars
+        viewport_height = min(30, terminal_height - 1)  # Leave 1 line for status
+        
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
-        viewport_width, viewport_height = 30, 30
+        
         # Display the initial viewport
-        stdscr.clear()  # Clear the screen
-        processor = DataProcessor(self)
-        if self.terminalon :
-            self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
-
+        stdscr.clear()
+        
+        # Rest of the code remains the same
         try:
             while not self.check_victory():
                 # Mettre à jour current_time au début de chaque itération si le jeu n'est pas en pause
@@ -541,6 +538,19 @@ class GameEngine:
 
                 elif key == ord('o'):
                     self.send_data = not self.send_data
+                elif key == ord('i'):  # Add AI mode switching
+                    # Get current player's AI
+                    current_player = self.get_player_by_id(this_player_id)
+                    if current_player and current_player.ai:
+                        # Toggle between aggressive and defensive
+                        if current_player.ai_profile == "aggressive":
+                            current_player.ai_profile = "defensive"
+                        else:
+                            current_player.ai_profile = "aggressive"
+                        # Update the AI instance
+                        current_player.ai = IA(current_player, current_player.ai_profile, self.map, time.time())
+                        self.debug_print(f"AI mode changed to: {current_player.ai_profile}")
+                        print(f"AI mode changed to: {current_player.ai_profile}")
 
                 #########################
 
@@ -640,21 +650,35 @@ class GameEngine:
                                         building.target = None
                         else:
                             pass
-                            #processor.update_data(player)
+                            #processor.update_data()
+                        request = DataProcessor().update_data() 
+                        if request:
+                            if request[1] == "scan_rooms":
+                                gr= GameRoom()
+                                PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
+                                PacketManager().send_packet()
+                            else:
+                                requesting_played_id = request[0]
+                                resources = None ##TODO
+                                PacketManager().package = (Resource_manager.create_init_resource_response(requesting_played_id,resources))
+                                PacketManager().send_packet()
+                                
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()
                 if self.terminalon :
-                    self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)
+                    try:
+                        self.map.display_viewport(stdscr, top_left_x, top_left_y, 
+                                                viewport_width, viewport_height, 
+                                                Map_is_paused=self.is_paused)
+                    except curses.error:
+                        # Handle viewport drawing error gracefully
+                        pass
                 stdscr.refresh()
 
                 if self.gui_running:
                     self.update_gui()
 
                 self.turn += 1
-                if self.send_data:
-                    print(self.players[1].package.package)
-                    self.players[1].package.pakage = ""
-                    print("===========================")
 
             active_players = [p for p in self.players if p.units or p.buildings]
             self.debug_print(f"Player {active_players[0].name} wins the game!", 'Magenta')

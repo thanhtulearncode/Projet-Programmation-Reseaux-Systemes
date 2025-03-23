@@ -5,6 +5,8 @@ import curses
 import os
 from Players import *
 from network.DataProcessor import DataProcessor
+from network.Game_Room import *
+from network.Data import *
 # Game Mode
 GameMode = None # "Utopia" or "Gold Rush"
 
@@ -787,7 +789,8 @@ class PlayerSettingsMenu:
 def start_menu(save_file=None):
     menu = StartMenu()
     action = menu.run()
-    global GameMode, map_size, players
+    global GameMode, map_size, players, multi_player, this_player
+
     
     # Handle Start Game and Multiplayer the same way
     if action in ['Start Game']:
@@ -802,8 +805,8 @@ def start_menu(save_file=None):
             GameMode = settings['mode']
             map_size = settings['map_size']
             num_players = int(settings['num_players'])
+            #####To be changed
             multi_player = True
-            synchonised = True
             players.clear()
             
             player_settings_menu = PlayerSettingsMenu(num_players)
@@ -811,7 +814,7 @@ def start_menu(save_file=None):
             
             if player_settings:
                 for i, settings in enumerate(player_settings):
-                    player_id = i + 1
+                    player_id = i
                     new_player = Player(
                         f'Player {player_id}',
                         settings['civilization'],
@@ -821,16 +824,16 @@ def start_menu(save_file=None):
                     players.append(new_player)
                 
                 pygame.quit()
-                if multi_player:
-                    if synchonised:
-                        game_engine = GameEngine(
-                            game_mode=GameMode,
-                            map_size=map_size,
-                            players=players,
-                            sauvegarde=False )
-                    else:
-                        DataProcessor(game_engine).initiate_sync()
-                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
+                game_engine = GameEngine(
+                    game_mode=GameMode,
+                    map_size=map_size,
+                    players=players,
+                    sauvegarde=False )
+                ###To be removed after testing
+                this_player = players[2]
+                PacketManager().set_player_port(this_player)
+                ###To be changed after testing
+                curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr,2))
             else:
                 return start_menu(save_file)
         else:
@@ -854,52 +857,90 @@ def start_menu(save_file=None):
         pygame.quit()
         print("Exiting game")
         sys.exit()
-    else:
-        settings_menu = GameSettingsMenu()
-        settings = settings_menu.run()
-        
-        if settings == 'back':
-            return start_menu(save_file)
-        elif settings:
-            from Game_Engine import GameEngine
+    else: ## Multiplayer option
+        grm= GameRoomManager(DataProcessor())
+        game_room= grm.scan_rooms()
+        print("game room info:",game_room)
+        if not game_room:
+            settings_menu = GameSettingsMenu()
+            settings = settings_menu.run()
             
-            GameMode = settings['mode']
-            map_size = settings['map_size']
-            num_players = int(settings['num_players'])
-            multi_player = True
-            synchonised = True
-            players.clear()
-            
-            player_settings_menu = PlayerSettingsMenu(num_players)
-            player_settings = player_settings_menu.run()
-            
-            if player_settings:
-                for i, settings in enumerate(player_settings):
-                    player_id = i + 1
-                    new_player = Player(
-                        f'Player {player_id}',
-                        settings['civilization'],
-                        settings['ai_mode'],
-                        player_id=player_id
-                    )
-                    players.append(new_player)
-                
-                pygame.quit()
-                if multi_player:
-                    if synchonised:
-                        game_engine = GameEngine(
-                            game_mode=GameMode,
-                            map_size=map_size,
-                            players=players,
-                            sauvegarde=False )
-                    else:
-                        DataProcessor(game_engine).initiate_sync()
-                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 2))
-            else:
+            if settings == 'back':
                 return start_menu(save_file)
+            elif settings:
+                from Game_Engine import GameEngine
+                
+                GameMode = settings['mode']
+                map_size = settings['map_size']
+                num_players = int(settings['num_players'])
+                multi_player = True
+                players.clear()
+                
+                player_settings_menu = PlayerSettingsMenu(num_players)
+                player_settings = player_settings_menu.run()
+                
+                if player_settings:
+                    for i, settings in enumerate(player_settings):
+                        player_id = i 
+                        new_player = Player(
+                            f'Player {player_id}',
+                            settings['civilization'],
+                            settings['ai_mode'],
+                            player_id=player_id
+                        )
+                        players.append(new_player)
+                    
+                    pygame.quit()
+                    this_player = players[0]
+                    PacketManager().player = this_player
+                    print("this player:",this_player)
+                    Resource_manager(this_player)
+                    game_room = GameRoom(num_players, GameMode, map_size, this_player.civilization, this_player.ai_profile)
+                    game_engine = GameEngine(
+                        game_mode=GameMode,
+                        map_size=map_size,
+                        players=players,
+                        sauvegarde=False )
+                    DataProcessor().game_engine = game_engine
+                    curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 0))
+                else:
+                    return start_menu(save_file)
+            else:
+                pygame.quit()
+                sys.exit()
         else:
+            GameMode = game_room.game_mode
+            map_size = game_room.map_size
+            num_players = game_room.number_of_players
+            game_room.player_count +=1
+            multi_player = True
+            players.clear()
+            for i in range(num_players):
+                player_id = i 
+                new_player = Player(
+                    f'Player {player_id}',
+                    game_room.civilization,
+                    game_room.ai_mode,
+                    player_id=player_id
+                )
+                players.append(new_player)  
             pygame.quit()
-            sys.exit()
+            this_player = players[game_room.player_count]
+            PacketManager().player = this_player
+            from Game_Engine import GameEngine
+            game_engine = GameEngine(
+                game_mode=GameMode,
+                map_size=map_size,
+                players=players,
+                sauvegarde=False )
+            DataProcessor().game_engine = game_engine
+            Resource_manager(this_player)
+            PacketManager().package = Resource_manager.create_init_resource_request()
+            PacketManager().send_packet()
+            DataProcessor().update_data()
+            curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.id))
+            
+
 
 def start_game(stdscr, save_file=None):
     from Game_Engine import GameEngine

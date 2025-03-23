@@ -1,4 +1,5 @@
 from network.Data import PacketManager
+
 class DataProcessor:
     _instance = None
 
@@ -7,41 +8,28 @@ class DataProcessor:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, game_engine):
+    def __init__(self):
         if not hasattr(self, '_initialized'):
             self._initialized = True
-            self.game_engine = game_engine
+            self.game_engine = None
+            self.packet_manager = PacketManager()
     
-    def initiate_sync(self):
-        """
-        ## Send a request to the server to initialize the engine
-        PacketMamager().send_packet("initialize_engine_request")
-        ## Wait for the server to respond with the corresonding civilisation, number of players and mode
-        PacketMamager().receive()
-        self.setup_engine()
-        ## Send a request to the server to initialize the map, to r correct the current resources and units
-        PacketMamager().send_packet("initialize_map_request")
-        ## Wait for the server to respond with the resources
-        PacketMamager().receive()
-        self.update_data()
-        ## Send a request to the server to initialize the units and buildings
-        PacketMamager().send_packet("initialize_units_request")
-        ## Wait for the server to respond with the units and buildings
-        PacketMamager().receive()
-        self.update_data()
-        """
-        pass
 
-    def update_data(self, player,game_engine):
-        packet =PacketManager().receive_packet()
-        PacketManager().process_packet(packet)
-        for row in packet:
-            if row[0] != str(player.id):
-                continue
-            match row[1]:
-                case "place_unit"| "remove_unit" | "place_building" | "remove_building":
-                    game_engine().update_map(row)
-
+    def update_data(self):
+        packet =self.packet_manager.receive_packet()
+        print("Received: ",packet)
+        if packet:
+            packet= self.packet_manager.process_packet(packet)
+            print ("Processed: ",packet)
+            for row in [row for row in packet if len(row) > 1]:
+                print(row)
+                match row[1]:
+                    case "place_unit"| "remove_unit" | "place_building" | "remove_building":
+                        self.game_engine.update_map(row)
+                    case default:
+                        if not self.packet_manager.player or self.packet_manager.player.id == 0:
+                            return row
+            return None
 
     def setup_engine(self):
         pass

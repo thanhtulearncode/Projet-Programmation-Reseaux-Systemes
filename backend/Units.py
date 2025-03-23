@@ -4,7 +4,6 @@ from Building import TownCenter
 from logger import debug_print
 from Starter_File import global_speedS
 from network.Data import PacketManager
-
 # Unit Class
 class Unit:
     global_speed = global_speedS
@@ -105,6 +104,9 @@ class Unit:
                 unit = unit_class(player)
         else:
             unit = unit_class
+        
+
+
         
         if (0 <= x < game_map.width and 
             0 <= y < game_map.height and 
