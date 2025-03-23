@@ -4,7 +4,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#define BUF 9182
+#define BUF 12000
 
 
 

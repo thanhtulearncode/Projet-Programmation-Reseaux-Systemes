@@ -43,6 +43,7 @@ class GameEngine:
         self.map_size = map_size
         self.players = players
         self.map = Map(*map_size)  # Create a map object
+        self.generated_map = False
         self.turn = 0
         self.is_paused = False  # Flag to track if the game is paused
         self.changed_tiles = set()  # Set to track changed tiles
@@ -110,18 +111,18 @@ class GameEngine:
                 return player
         return None
     
-    def load_initial_map(self, map_packet):
+    def load_map(self, map_packet):
         self.map.map_decoding(map_packet)
 
     def update_units(self, unit_packet):
         #unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
         unit_info = unit_packet.strip().split(';')
         print(unit_info)
-        type = unit_info[0]
-        unit_name = unit_info[1]
-        unit_position = int(float(unit_info[2])), int(float(unit_info[3]))
-        unit_health = int(unit_info[4])
-        player_id = int(unit_info[5])
+        type = unit_info[1]
+        unit_name = unit_info[2]
+        unit_position = int(float(unit_info[3])), int(float(unit_info[4]))
+        unit_health = int(unit_info[5])
+        player_id = int(unit_info[0])
         player = self.get_player_by_id(player_id)
         unit_task = unit_info[6]
         unit_direction = unit_info[7]
@@ -165,11 +166,11 @@ class GameEngine:
     def update_buildings(self, building_packet):
         #building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
         building_info = building_packet.strip().split(';')
-        type = building_info[0]
-        building_name = building_info[1]
-        building_position = int(float(building_info[2])), int(float(building_info[3]))
-        building_hp = int(building_info[4])
-        player_id = int(building_info[5])
+        type = building_info[1]
+        building_name = building_info[2]
+        building_position = int(float(building_info[3])), int(float(building_info[4]))
+        building_hp = int(building_info[5])
+        player_id = int(building_info[0])
         player = self.get_player_by_id(player_id)
         if type == "spawn_building":
             building_position = int(building_position[0]), int(building_position[1])
@@ -668,9 +669,7 @@ class GameEngine:
                                 PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
                                 PacketManager().send_packet()
                             else:
-                                requesting_played_id = request[0]
-                                resources = None ##TODO
-                                ##PacketManager().package = (Resource_manager.create_init_resource_response(requesting_played_id,resources))
+                                PacketManager().package = PacketManager().create_map_packet(self.map)
                                 PacketManager().send_packet()
                                 
                 # Clear the screen and display the new part of the map after moving

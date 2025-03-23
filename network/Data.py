@@ -64,8 +64,7 @@ class PacketManager:
     @classmethod
     def create_map_packet(self, map):
         map_packet = map.map_encoding()
-        self.map = map_packet
-        print(map_packet)
+        return f"{0};map;{map_packet}"
         
     @classmethod
     def create_resource_map_packet(self, resource, x, y, type):
@@ -74,12 +73,12 @@ class PacketManager:
         
     @classmethod
     def create_unit_packet(self, unit, type):
-        unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
+        unit_packet = f"{unit.player.id};{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction}"   
         unit.player.package.package += f"{unit_packet}\n"
         print(unit_packet)
                 
     def create_building_packet(self, building, type):
-        building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
+        building_packet = f"{building.player.id};{type};{building.name};{building.position[0]};{building.position[1]};{building.hp}"
         building.player.package.package += f"{building_packet}\n"
         #print(building_packet)
         
@@ -104,6 +103,7 @@ class PacketManager:
             print(f"Message envoyé au serveur")
         except socket.error as e:
             print(f"Erreur lors de l'envoi du message: {e}")
+        self.package = ""
 
     def receive_packet(self)-> str:
         try:

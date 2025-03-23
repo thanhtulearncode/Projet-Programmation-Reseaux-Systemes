@@ -831,7 +831,7 @@ def start_menu(save_file=None):
                     sauvegarde=False )
                 ###To be removed after testing
                 this_player = players[2]
-                PacketManager().set_player_port(this_player)
+                PacketManager().player = this_player
                 ###To be changed after testing
                 curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr,2))
             else:

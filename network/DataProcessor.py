@@ -25,7 +25,11 @@ class DataProcessor:
                 print(row)
                 match row[1]:
                     case "place_unit"| "remove_unit" | "place_building" | "remove_building":
-                        self.game_engine.update_map(row)
+                        self.game_engine.update_game(row)
+                    case "map":
+                        if not self.game_engine.generated_map:
+                            self.game_engine.load_map(row[2])
+                            self.game_engine.generated_map = True
                     case default:
                         if not self.packet_manager.player or self.packet_manager.player.id == 0:
                             return row
