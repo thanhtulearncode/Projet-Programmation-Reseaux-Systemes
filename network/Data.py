@@ -40,13 +40,14 @@ class PacketManager:
                 print(f"Error reading or updating current_players.txt: {e}")
                 self.server_port = 8080
             PacketManager._initialized = True
-        
+
+
     @staticmethod
     def process_packet(data) -> list:
         result = []
         # Remove trailing asterisk if only one message
-        if data.count('*') <= 1:
-            data = data.rstrip('*')
+        if data[-1] == '*':
+            data = data[:-1]
             
         items = data.split('*')
 
@@ -58,7 +59,7 @@ class PacketManager:
                     result.append(parts)
                 else:
                     result.append(['None'])
-        
+        print(result)
         return result
     
     @classmethod
@@ -74,14 +75,25 @@ class PacketManager:
     @classmethod
     def create_unit_packet(self, unit, type):
         unit_packet = f"{unit.player.id};{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction}"   
-        unit.player.package.package += f"{unit_packet}\n"
-        print(unit_packet)
-                
+        return f"{unit_packet}*"
+
+    @classmethod     
     def create_building_packet(self, building, type):
         building_packet = f"{building.player.id};{type};{building.name};{building.position[0]};{building.position[1]};{building.hp}"
-        building.player.package.package += f"{building_packet}\n"
-        #print(building_packet)
+        return f"{building_packet}*"
+
+    @classmethod
+    def create_current_state_packet(self, players):
+        packet = ""
+        for player in players:
+            for unit in player.units:
+                packet += self.create_unit_packet(unit, "current_unit")
+            for building in player.buildings:
+                packet += self.create_building_packet(building, "current_building")
         
+        return packet
+
+
     def extract_package(self, row):
         PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
         return PacketManager.package_header

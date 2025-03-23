@@ -171,11 +171,11 @@ class Map:
                         if self.grid[y + j][x + i].rubble in self.rubbles:
                             self.rubbles.remove(self.grid[y + j][x + i].rubble)
             self.set_id(building)
-            building.player.package.create_packet(building, "place_building")
+            #building.player.package.create_packet(building, "place_building")
                         
 
     def remove_building(self, x, y, building):
-        building.player.package.create_packet(building, "remove_building")
+        #building.player.package.create_packet(building, "remove_building")
         for i in range(building.size):
             for j in range(building.size):
                 #packetManager.create_packet(building, "remove_building")
@@ -193,10 +193,10 @@ class Map:
             tile = self.grid[y][x]
             tile.unit.append(unit)  # Place the unit on the tile
             self.set_id(unit)
-            PacketManager.create_unit_packet(unit, "place_unit")
+            unit.player.package += PacketManager.create_unit_packet(unit, "place_unit")
 
     def remove_unit(self, x, y, unit):
-        PacketManager.create_unit_packet(unit, "remove_unit")
+        unit.player.package += PacketManager.create_unit_packet(unit, "remove_unit")
         tile = self.grid[y][x]
         if tile.unit is not None and unit in tile.unit:
             tile.unit.remove(unit)  # Remove the unit from the tile
@@ -232,6 +232,7 @@ class Map:
             for x in range(viewport_width):
                 map_x = top_left_x + x
                 map_y = top_left_y + y
+                #print(f"Huy dep trai {x}, {len(self.grid[map_y])}")
                 if 0 <= map_x < self.width and 0 <= map_y < self.height:
                     tile = self.grid[map_y][map_x]
                     if (map_x, map_y) in changed_tiles or not changed_tiles:
@@ -357,19 +358,40 @@ class Map:
         return "/".join(encoded_rows)
 
     def map_decoding(self, encoded_map):
-        self.grid = []
-        for y, line in enumerate(encoded_map.split("/")):  
-            row = []
-            for match in re.findall(r"([.GW])(\d+)", line):  
-                symbol, count = match[0], int(match[1])
-                for _ in range(count):
-                    tile = Tile(len(row), y)  
-                    if symbol == "G":
-                        tile.resource = Gold()
-                    elif symbol == "W":
-                        tile.resource = Wood()
-                    row.append(tile)
-            self.grid.append(row)
+            if self.buildings:
+                player = self.buildings[0].player
+                player.buildings = []
+                player.units = []
+                player.constructing_buildings = []
+                player.training_units = []
+                player.population = 0
+                player.max_population = 200
+                self.resources = {"Gold": [], "Wood": []}
+                self.buildings = []
+                self.rubbles = []
+                self.id_count = 0 
+
+            self.grid = []
+            for y, line in enumerate(encoded_map.split("/")):  
+                row = []
+                for match in re.findall(r"([.GW])(\d+)", line):  
+                    symbol, count = match[0], int(match[1])
+                    for _ in range(count):
+                        tile = Tile(len(row), y)  
+                        if symbol == "G":
+                            resource = Gold()
+                            tile.resource = resource
+                            self.resources["Gold"].append((len(row), y))  # Corrected x-coordinate
+                        elif symbol == "W":
+                            resource = Wood()
+                            tile.resource = resource
+                            self.resources["Wood"].append((len(row), y))  # Corrected x-coordinate
+                        row.append(tile)
+                if len(row) < self.width:
+                    for _ in range(self.width - len(row)):
+                        tile = Tile(len(row), y)
+                        row.append(tile)
+                self.grid.append(row)
 
 class Tile:
     def __init__(self, x, y):

@@ -19,15 +19,16 @@ class DataProcessor:
         if not wait:
             packet =self.packet_manager.receive_packet()
         else:
-            packet = self.packet_manager.receive_packet(2)
-        print("Received: ",packet)
+            packet = self.packet_manager.receive_packet(3)
+        #print("Received: ",packet)
+
         if packet:
             packet= self.packet_manager.process_packet(packet)
             print ("Processed: ",packet)
             for row in [row for row in packet if len(row) > 1]:
                 print(row)
                 match row[1]:
-                    case "place_unit"| "remove_unit" | "place_building" | "remove_building":
+                    case "place_unit"| "remove_unit" | "spawn_unit" | "kill_unit" | "spawn_building" | "kill_building" | "current_unit" | "current_building":
                         self.game_engine.update_game(row)
                     case "map":
                         if not self.game_engine.generated_map:

@@ -15,6 +15,7 @@ class Player:
         self.population = 0
         self.max_population = 200
         self.training_units = []
+        self.package = ""
         self.id = player_id  # Add this line to store the player's ID
         if self.civilization == "Means":
             self.owned_resources = self.Means_starting_resources

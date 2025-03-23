@@ -104,10 +104,9 @@ class Unit:
                 unit = unit_class(player)
         else:
             unit = unit_class
-        
 
+        print(f"Spawning {unit.name} for {player.id} at ({x}, {y})")
 
-        
         if (0 <= x < game_map.width and 
             0 <= y < game_map.height and 
             not (player.population >= player.max_population or 
@@ -119,7 +118,7 @@ class Unit:
                 unit.position = (x, y)
                 player.population += 1
                 game_map.place_unit(x, y, unit)
-                PacketManager.create_unit_packet(unit, "spawn_unit")
+                player.package += PacketManager.create_unit_packet(unit, "spawn_unit")
                 return unit
             else:
                 debug_print(f"Cannot place unit at ({x}, {y}): tile is not walkable.", 'Yellow')
@@ -180,7 +179,7 @@ class Unit:
         
     @classmethod
     def kill_unit(cls, player, unit_to_kill, game_map):
-        PacketManager.create_unit_packet(unit_to_kill, "kill_unit")
+        player.package += PacketManager.create_unit_packet(unit_to_kill, "kill_unit")
         if unit_to_kill in player.units:
             player.units.remove(unit_to_kill)  # Remove the unit from the player's list of units
             if unit_to_kill in player.ai.defending_units:
