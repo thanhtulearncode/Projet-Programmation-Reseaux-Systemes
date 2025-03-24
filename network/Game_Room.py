@@ -61,4 +61,3 @@ class GameRoom:
     def verify_password(self, password):
         return password == GameRoomManager._room_password and self.player_count < self.number_of_players
 
-
