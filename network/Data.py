@@ -9,10 +9,11 @@ import select
 import sys
 import subprocess
 from time import sleep
+from network.Game_Room import GameRoomManager
 
 BUF = 12000
 SERVER_IP = "127.0.0.1"
-SECRET_KEY = b"mysecretpassword"  # Clé de 16 octets (128 bits)
+SECRET_KEY = GameRoomManager._room_password.encode('utf-8')
 
 class PacketManager:
     _instance = None 
