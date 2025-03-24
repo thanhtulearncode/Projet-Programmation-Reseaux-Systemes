@@ -125,12 +125,39 @@ class GameEngine:
         unit_direction = unit_info[7]
         if type == "spawn_unit" or type == "current_unit":
             unit_position = int(unit_position[0]), int(unit_position[1])
-            if unit_name == "Swordsman":
-                Unit.spawn_unit(Swordsman, unit_position[0], unit_position[1], player, self.map)
-            elif unit_name == "Archer":
-                Unit.spawn_unit(Archer, unit_position[0], unit_position[1], player, self.map)
-            elif unit_name == "Horseman":
-                Unit.spawn_unit(Horseman, unit_position[0], unit_position[1], player, self.map)
+            if "Swordsman" in unit_name:
+                unit = Swordsman(player, position = unit_position, name = unit_name)
+                for u in player.units:
+                    if u.name == unit_name:
+                        player.units.remove(u)
+                        u.player = None
+                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
+                player.units.append(unit)
+                x, y = unit_position
+                player.population = len(player.units)
+                self.map.place_unit(x, y, unit)
+            elif "Archer" in unit_name:
+                unit = Archer(player, position = unit_position, name = unit_name)
+                for u in player.units:
+                    if u.name == unit_name:
+                        player.units.remove(u)
+                        u.player = None
+                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
+                player.units.append(unit)
+                x, y = unit_position
+                player.population = len(player.units)
+                self.map.place_unit(x, y, unit)
+            elif "Horseman" in unit_name:
+                unit = Horseman(player, position = unit_position, name = unit_name)
+                for u in player.units:
+                    if u.name == unit_name:
+                        player.units.remove(u)
+                        u.player = None
+                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
+                player.units.append(unit)
+                x, y = unit_position
+                player.population = len(player.units)
+                self.map.place_unit(x, y, unit)
             else:
                 #Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
                 unit = Villager(player, position = unit_position, name = unit_name)

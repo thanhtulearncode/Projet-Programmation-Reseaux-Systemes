@@ -176,7 +176,6 @@ class Unit:
                     next_unit.training_start = current_time_called
 
 
-        
     @classmethod
     def kill_unit(cls, player, unit_to_kill, game_map):
         player.package += PacketManager.create_unit_packet(unit_to_kill, "kill_unit")
