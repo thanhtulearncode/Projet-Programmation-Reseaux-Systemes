@@ -134,9 +134,14 @@ class GameEngine:
             else:
                 #Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
                 unit = Villager(player, position = unit_position, name = unit_name)
+                for u in player.units:
+                    if u.name == unit_name:
+                        player.units.remove(u)
+                        u.player = None
+                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
                 player.units.append(unit)
                 x, y = unit_position
-                player.population += 1
+                player.population = len(player.units)
                 self.map.place_unit(x, y, unit)
 
         elif type == "place_unit":
@@ -188,13 +193,15 @@ class GameEngine:
                 Building.spawn_building(player, building_position[0], building_position[1], Farm, self.map)
             elif building_name == "House":
                 Building.spawn_building(player, building_position[0], building_position[1], House, self.map)
+            elif building_name == "Camp":
+                Building.spawn_building(player, building_position[0], building_position[1], Camp, self.map)
             else: 
                 return
         elif type == "kill_building":
             for building in player.buildings:
                 if building.position == building_position:
                     break
-                Building.kill_building(player, player.building, self.map)
+                Building.kill_building(player, building, self.map)
             
     def update_game(self, packet):
         if packet[1] and "unit" in packet[1]:
@@ -664,8 +671,11 @@ class GameEngine:
                                         action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
                                     else: 
                                         building.target = None
-                        else:
-                            pass
+                            if self.turn % 50 == 0:
+                                PacketManager().package = PacketManager().create_current_state_packet([player])
+                                #PacketManager().package = player.package
+                                PacketManager().send_packet()
+
                         request = DataProcessor().update_data() 
                         if request:
                             if request[1] == "scan_rooms":
@@ -674,6 +684,7 @@ class GameEngine:
                                 PacketManager().send_packet()
                             else:
                                 PacketManager().package = PacketManager().create_map_packet(self.map)
+                                DataProcessor().map = PacketManager().package
                                 PacketManager().send_packet()
                                 PacketManager().package = PacketManager().create_current_state_packet(self.players)
                                 PacketManager().send_packet()

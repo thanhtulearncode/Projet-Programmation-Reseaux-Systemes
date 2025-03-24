@@ -20,7 +20,7 @@ class DataProcessor:
             packet =self.packet_manager.receive_packet()
         else:
             packet = self.packet_manager.receive_packet(3)
-        #print("Received: ",packet)
+        print("Received: ",packet)
 
         if packet:
             packet= self.packet_manager.process_packet(packet)

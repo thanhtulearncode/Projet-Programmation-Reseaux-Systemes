@@ -261,6 +261,7 @@ class GUI(threading.Thread):
         self.mouse_held = None
            
         self.PLAYER_COLORS = {
+            0: (255, 255, 255),# White 
             1: (0, 0, 255),    # Blue
             2: (255, 0, 0),    # Red
             3: (0, 100, 0),    # Green
