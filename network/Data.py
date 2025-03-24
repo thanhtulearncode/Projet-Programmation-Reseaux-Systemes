@@ -31,7 +31,7 @@ class PacketManager:
                     current_number = int(file.read().strip())
                 port_id = current_number % 8
                 self.server_port = 8080 + port_id
-                process = subprocess.Popen(["..\\network\\broadserv.exe", str(port_id)], creationflags=subprocess.CREATE_NEW_CONSOLE)
+                process = subprocess.Popen(["..\\network\\broadserv.exe"], creationflags=subprocess.CREATE_NEW_CONSOLE)
                 current_number += 1
                 with open("../network/current_players.txt", "w") as file:
                     file.write(str(current_number))
