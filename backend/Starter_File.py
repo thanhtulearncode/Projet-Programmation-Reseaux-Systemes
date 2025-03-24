@@ -1103,6 +1103,7 @@ def start_menu(save_file=None):
                             players=players,
                             sauvegarde=False )
                         DataProcessor().game_engine = game_engine
+                        DataProcessor().packet_manager.send_packet()
                         pygame.quit()  # Moved after game setup but before running
                         curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 0))
                         return  # Exit after game ends
@@ -1118,7 +1119,7 @@ def start_menu(save_file=None):
                 # Initialize DataProcessor and scan for rooms
                 data_processor = DataProcessor()
                 grm = GameRoomManager(data_processor)
-                game_room = grm.scan_rooms()
+                game_room = grm.scan_rooms(password)
                 
                 if not game_room:
                     print("No rooms available")
