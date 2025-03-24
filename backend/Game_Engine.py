@@ -113,6 +113,16 @@ class GameEngine:
     def load_map(self, map_packet):
         self.map.map_decoding(map_packet)
 
+    def update_resources_map(self, resource_info):
+        #f"{0};{type};{resource.type};{x};{y};{resource.amount}"
+        type = resource_info[1]
+        resource_type = resource_info[2]
+        x = int(float(resource_info[3]))
+        y = int(float(resource_info[4]))
+        self.map.grid[y][x].resource.amount = int(resource_info[5])
+        if self.map.grid[y][x].resource.amount <= 0:
+            self.map.grid[y][x].resource = None
+
     def update_units(self, unit_info):
         #unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
         type = unit_info[1]
@@ -126,7 +136,11 @@ class GameEngine:
         if type == "spawn_unit" or type == "current_unit":
             unit_position = int(unit_position[0]), int(unit_position[1])
             if "Swordsman" in unit_name:
-                unit = Swordsman(player, position = unit_position, name = unit_name)
+                unit = Swordsman(player)
+                unit.position = unit_position
+                unit.hp = unit_health
+                unit.task = unit_task
+                unit.direction = unit_direction
                 for u in player.units:
                     if u.name == unit_name:
                         player.units.remove(u)
@@ -137,7 +151,12 @@ class GameEngine:
                 player.population = len(player.units)
                 self.map.place_unit(x, y, unit)
             elif "Archer" in unit_name:
-                unit = Archer(player, position = unit_position, name = unit_name)
+                unit = Archer(player)
+                unit.position = unit_position
+                unit.position = unit_position
+                unit.hp = unit_health
+                unit.task = unit_task
+                unit.direction = unit_direction
                 for u in player.units:
                     if u.name == unit_name:
                         player.units.remove(u)
@@ -149,6 +168,9 @@ class GameEngine:
                 self.map.place_unit(x, y, unit)
             elif "Horseman" in unit_name:
                 unit = Horseman(player, position = unit_position, name = unit_name)
+                unit.hp = unit_health
+                unit.task = unit_task
+                unit.direction = unit_direction
                 for u in player.units:
                     if u.name == unit_name:
                         player.units.remove(u)
@@ -161,6 +183,9 @@ class GameEngine:
             else:
                 #Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
                 unit = Villager(player, position = unit_position, name = unit_name)
+                unit.hp = unit_health
+                unit.task = unit_task
+                unit.direction = unit_direction
                 for u in player.units:
                     if u.name == unit_name:
                         player.units.remove(u)
@@ -207,21 +232,54 @@ class GameEngine:
         if type == "spawn_building" or type == "current_building":
             building_position = int(building_position[0]), int(building_position[1])
             if building_name == "Town Center":
-                Building.spawn_building(player, building_position[0], building_position[1], TownCenter, self.map)
+                building = TownCenter(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)  # Use the passed map instead of cls.map
+                player.buildings.append(building)
             elif building_name == "Barracks":
-                Building.spawn_building(player, building_position[0], building_position[1], Barracks, self.map)
+                building = Barracks(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
             elif building_name == "Stable":
-                Building.spawn_building(player, building_position[0], building_position[1], Stable, self.map)
+                building = Stable(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
             elif building_name == "ArcheryRange":
-                Building.spawn_building(player, building_position[0], building_position[1], ArcheryRange, self.map)
+                building = ArcheryRange(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
             elif building_name == "Keep":
-                Building.spawn_building(player, building_position[0], building_position[1], Keep, self.map)
+                building = Keep(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
             elif building_name == "Farm":
-                Building.spawn_building(player, building_position[0], building_position[1], Farm, self.map)
+                building = Farm(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
             elif building_name == "House":
-                Building.spawn_building(player, building_position[0], building_position[1], House, self.map)
+                building = House(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
             elif building_name == "Camp":
-                Building.spawn_building(player, building_position[0], building_position[1], Camp, self.map)
+                building = Camp(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
             else: 
                 return
         elif type == "kill_building":
@@ -237,6 +295,8 @@ class GameEngine:
         elif packet[1] and "building" in packet[1]:
             print("Huy dep trai 456")
             self.update_buildings(packet)
+        elif packet[1] and ("Gold" == packet[2] or "Wood" == packet[2]):
+            pass
         else:
             return
     
@@ -667,6 +727,15 @@ class GameEngine:
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
                     for player in self.players:
+                        request = DataProcessor().update_data() 
+                        if request:
+                            if request[1] == "scan_rooms":
+                                gr= GameRoom()
+                                PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
+                                PacketManager().send_packet()
+                            else:
+                                PacketManager().package = PacketManager().create_map_packet(self.map)
+                                PacketManager().send_packet()
                         if player.id == this_player_id:
                             for unit in player.units:
                                 if unit.task == "going_to_battle":
@@ -699,22 +768,10 @@ class GameEngine:
                                     else: 
                                         building.target = None
                             if self.turn % 50 == 0:
-                                PacketManager().package = PacketManager().create_current_state_packet([player])
+                                PacketManager().package = PacketManager().create_current_state_packet([player], self.map)
                                 #PacketManager().package = player.package
                                 PacketManager().send_packet()
 
-                        request = DataProcessor().update_data() 
-                        if request:
-                            if request[1] == "scan_rooms":
-                                gr= GameRoom()
-                                PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
-                                PacketManager().send_packet()
-                            else:
-                                PacketManager().package = PacketManager().create_map_packet(self.map)
-                                DataProcessor().map = PacketManager().package
-                                PacketManager().send_packet()
-                                PacketManager().package = PacketManager().create_current_state_packet(self.players)
-                                PacketManager().send_packet()
                                 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

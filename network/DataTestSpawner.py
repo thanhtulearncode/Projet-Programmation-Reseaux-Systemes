@@ -1,6 +1,7 @@
 import random
 import csv
 import string
+import time
 
 def spawner_test():
     player_id = random.randint(0, 10)
@@ -35,3 +36,5 @@ spawner = Spawner()
 spawner.process_csv("spawner_test_output.csv")
 
 print(spawner_test())
+
+print(time.time())

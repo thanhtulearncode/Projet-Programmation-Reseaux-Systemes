@@ -92,12 +92,17 @@ class Building:
         building.position = (x, y)
         game_map.place_building(x, y, building)  # Use the passed map instead of cls.map
         player.buildings.append(building)  # Add the building to the player's list of buildings
-        player.package += PacketManager.create_building_packet(building, "spawn_building")
-        #debug_print(f"Building {building.name} belonging to {player.name} at ({x}, {y}) spawned.")
-
+        packet = PacketManager.create_building_packet(building, "spawn_building", None, None, None, time.time())
+        if packet:
+            player.buidings.remove(building)
+            game_map.remove_building(x, y, building)
+            return
+        
     @classmethod
     def kill_building(cls, player, building_to_kill, game_map):
-        player.package += PacketManager.create_building_packet(building_to_kill, "kill_building")
+        packet = PacketManager.create_building_packet(building_to_kill, "kill_building", None, None, None, time.time())
+        if packet: 
+            return
         if building_to_kill in player.buildings:
             if building_to_kill.position in player.ai.decided_builds and not building_to_kill.name == "Construct":
                 player.ai.decided_builds.remove(building_to_kill.position)

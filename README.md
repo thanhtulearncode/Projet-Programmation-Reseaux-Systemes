@@ -96,3 +96,24 @@ Game_Engine.py
     output : état actuel du jeu
 
 ### thiếu cập nhật resource hiện tại, đợi Trí cmt readme ###
+
+
+######################################
+1. packet = creat_blabla_packet(): tạo packet và cộng dồn vào Packetmanager, trả về packet đại diện cho thay đổi bên dưới
+2. processing() :
+2.1. gửi packet từ PacketManager, sau đó nhận packet và lại cộng dồn vào, ta được packets của toàn bộ players
+2.2. lọc
+3. kiểm tra packet còn nằm trong PacketManager.package không, nếu có thì update_game()
+
+Ví dụ packet:
+"""unit_packet = f"{current_time_call};{unit.player.id};{type};{target.position[0]};{target.position[1]};"
+        unit_packet += f"{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction};"   
+        self.package += f"{unit_packet}*""""
+
+"""def create_building_packet(self, building, type, target, current_time_call):
+        building_packet = f"{current_time_call};{building.player.id};{type};{target.position[0]};{target.position[1]};{ta}"
+        building_packet += f"{building.name};{building.position[0]};{building.position[1]};{building.hp}"
+        return f"{building_packet}*""""
+"1742843162.730921;1;_attack;45;45;20;Mbappé;34;44;20;going_to_battle;southwest"
+"1742843162.730921;1;spawn_building;45;45;20;House;None;None;None"
+"1742843162.730921;1;kill_building;None;None;House;45;45;0"

@@ -68,29 +68,42 @@ class PacketManager:
         return f"{0};map;{map_packet}"
         
     @classmethod
-    def create_resource_map_packet(self, resource, x, y, type):
-        resource_packet = f"{type};{resource.type};{x};{y};{resource.amount}"
-        #print(resource_packet)
+    def create_resource_map_packet(self, resource_type, type, x, y, amount, current_time_call):
+        resource_packet = f"{current_time_call};{0};{type};{x};{y};{amount};{resource_type}"
+        self.package += f"{resource_packet}*"
+        return resource_packet
         
     @classmethod
-    def create_unit_packet(self, unit, type):
-        unit_packet = f"{unit.player.id};{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction}"   
-        return f"{unit_packet}*"
+    def create_unit_packet(self, unit, type, x, y, hp, current_time_call):
+        unit_packet = f"{current_time_call};{unit.player.id};{type};{x};{y};{hp};"
+        unit_packet += f"{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction};"   
+        self.package += f"{unit_packet}*"
+        return unit_packet
 
     @classmethod     
-    def create_building_packet(self, building, type):
-        building_packet = f"{building.player.id};{type};{building.name};{building.position[0]};{building.position[1]};{building.hp}"
-        return f"{building_packet}*"
+    def create_building_packet(self, building, type,  x, y, hp, current_time_call):
+        building_packet = f"{current_time_call};{building.player.id};{type};{x};{y};{hp}"
+        building_packet += f"{building.name};{building.position[0]};{building.position[1]};{building.hp}"
+        self.package += f"{building_packet}*"
+        return building_packet
 
     @classmethod
-    def create_current_state_packet(self, players):
+    def create_current_state_packet(self, players, map):
         packet = ""
         for player in players:
             for unit in player.units:
                 packet += self.create_unit_packet(unit, "current_unit")
             for building in player.buildings:
                 packet += self.create_building_packet(building, "current_building")
-        
+        for x, y in map.resources["Gold"]:
+            tile = map.grid[y][x]
+            resource = tile.resource
+            packet += self.create_resource_map_packet(resource, x, y, "current_resource")
+        for x, y in map.resources["Wood"]:
+            tile = map.grid[y][x]
+            resource = tile.resource
+            packet += self.create_resource_map_packet(resource, x, y, "current_resource")
+
         return packet
 
 

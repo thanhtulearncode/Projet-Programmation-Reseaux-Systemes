@@ -4,6 +4,7 @@ from Building import TownCenter
 from logger import debug_print
 from Starter_File import global_speedS
 from network.Data import PacketManager
+import time
 # Unit Class
 class Unit:
     global_speed = global_speedS
@@ -118,7 +119,12 @@ class Unit:
                 unit.position = (x, y)
                 player.population += 1
                 game_map.place_unit(x, y, unit)
-                player.package += PacketManager.create_unit_packet(unit, "spawn_unit")
+                packet = PacketManager.create_unit_packet(unit, "spawn_unit", None, None, None, time.time())
+                if packet:
+                    game_map.remove_unit(x, y, unit)
+                    player.population -=1
+                    player.units.remove(unit)
+                    return
                 return unit
             else:
                 debug_print(f"Cannot place unit at ({x}, {y}): tile is not walkable.", 'Yellow')
@@ -178,7 +184,9 @@ class Unit:
 
     @classmethod
     def kill_unit(cls, player, unit_to_kill, game_map):
-        player.package += PacketManager.create_unit_packet(unit_to_kill, "kill_unit")
+        packet = PacketManager.create_unit_packet(unit_to_kill, "kill_unit", None, None, None, time.time())
+        if packet:
+            return
         if unit_to_kill in player.units:
             player.units.remove(unit_to_kill)  # Remove the unit from the player's list of units
             if unit_to_kill in player.ai.defending_units:
