@@ -29,7 +29,6 @@ class PacketManager:
             try:
                 self.server_port = 8080
                 process = subprocess.Popen(["..\\network\\broadserv.exe"], creationflags=subprocess.CREATE_NEW_CONSOLE)
-                current_number += 1
                 sleep(2)
             except (FileNotFoundError, ValueError) as e:
                 print(f"Error reading or updating current_players.txt: {e}")
