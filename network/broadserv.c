@@ -7,7 +7,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#define BUF 512
+#define BUF 12000
 #define UDP_PORT 8080
 #define CLIENT_PORT 8081
 
@@ -278,40 +278,23 @@ int main(int argc, char* argv[]) {
         // Vérifier les messages DTLS
         if (FD_ISSET(udp_sockfd, &readfds)) {
             memset(buffer, 0, BUF);
-
-            // Lire un message via DTLS
-            int n = SSL_read(ssl, buffer, BUF);
-            if (n <= 0) {
-                int err = SSL_get_error(ssl, n);
-                if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
-                    continue;
+            if (SSL_read(ssl, buffer, BUF) <= 0) {
+                int err = SSL_get_error(ssl, -1);
+                if (err == SSL_ERROR_WANT_READ) continue;
+                else {
+                    ERR_print_errors_fp(stderr);
+                    break;
                 }
-                ERR_print_errors_fp(stderr);
-                break;
             }
-
-            buffer[n] = '\0'; // Terminer la chaîne reçue
-            printf("Message reçu via DTLS : %s\n", buffer);
-
-            // Traiter le message reçu
-            snprintf(buffer, BUF, "Réponse DTLS : %s", buffer);
-
-            // Envoyer une réponse via DTLS
-            if (SSL_write(ssl, buffer, strlen(buffer)) <= 0) {
-                ERR_print_errors_fp(stderr);
-                break;
-            }
-            printf("Réponse envoyée via DTLS : %s\n", buffer);
+            printf("Message sécurisé reçu : %s\n", buffer);
         }
     }
 
-    SSL_shutdown(ssl);
     SSL_free(ssl);
-    BIO_free(bio);
-    closesocket(udp_sockfd);
-    closesocket(client_sockfd);
     SSL_CTX_free(ctx);
     cleanup_openssl();
+    closesocket(client_sockfd);
+    closesocket(udp_sockfd);
     WSACleanup();
     return 0;
 }
