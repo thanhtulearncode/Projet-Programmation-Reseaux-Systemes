@@ -1,5 +1,9 @@
 import csv
 from ctypes import WinError
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.backends import default_backend
+import os
 import socket
 import select
 import sys
@@ -8,6 +12,8 @@ from time import sleep
 
 BUF = 12000
 SERVER_IP = "127.0.0.1"
+SECRET_KEY = b"mysecretpassword"  # Clé de 16 octets (128 bits)
+
 class PacketManager:
     _instance = None 
     package_header = ""   
@@ -35,6 +41,37 @@ class PacketManager:
                 self.server_port = 8080
             PacketManager._initialized = True
 
+    def encrypt_message(self, message: str) -> bytes:
+        """Chiffre un message avec AES."""
+        backend = default_backend()
+        iv = os.urandom(16)  # Générer un vecteur d'initialisation aléatoire
+        cipher = Cipher(algorithms.AES(SECRET_KEY), modes.CFB(iv), backend=backend)
+        encryptor = cipher.encryptor()
+
+        # Ajouter un padding au message
+        padder = padding.PKCS7(128).padder()
+        padded_data = padder.update(message.encode('utf-8')) + padder.finalize()
+
+        # Chiffrer le message
+        encrypted_message = encryptor.update(padded_data) + encryptor.finalize()
+        return iv + encrypted_message  # Préfixer le IV au message chiffré
+
+    def decrypt_message(self, encrypted_message: bytes) -> str:
+        """Déchiffre un message avec AES."""
+        backend = default_backend()
+        iv = encrypted_message[:16]  # Extraire le vecteur d'initialisation
+        encrypted_data = encrypted_message[16:]
+
+        cipher = Cipher(algorithms.AES(SECRET_KEY), modes.CFB(iv), backend=backend)
+        decryptor = cipher.decryptor()
+
+        # Déchiffrer le message
+        padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
+
+        # Retirer le padding
+        unpadder = padding.PKCS7(128).unpadder()
+        data = unpadder.update(padded_data) + unpadder.finalize()
+        return data.decode('utf-8')
 
     @staticmethod
     def process_packet(data) -> list:
@@ -103,15 +140,18 @@ class PacketManager:
                 
     #send self.package to the server
     def send_packet(self):
+        """Chiffre et envoie un message au serveur."""
         self.socket.setblocking(False)
         try:
-            self.socket.sendto(self.package.encode('utf-8'), (SERVER_IP, self.server_port))
-            print(f"Message envoyé au serveur")
+            encrypted_message = self.encrypt_message(self.package)
+            self.socket.sendto(encrypted_message, (SERVER_IP, self.server_port))
+            print(f"Message chiffré envoyé au serveur")
         except socket.error as e:
             print(f"Erreur lors de l'envoi du message: {e}")
         self.package = ""
 
     def receive_packet(self, time_out = 0)-> str:
+        """Reçoit et déchiffre un message du serveur."""
         try:
             self.socket.setblocking(False)  
         except socket.error as e:
@@ -125,7 +165,14 @@ class PacketManager:
                     
                     received_packets,_= self.socket.recvfrom(BUF)
 
-            return received_packets.decode('utf-8') if received_packets else None
+            if received_packets:
+                try:
+                    decrypted_message = self.decrypt_message(received_packets)
+                    return decrypted_message
+                except Exception as e:
+                    print(f"Erreur lors du déchiffrement : {e}")
+                    return None
+            return None
     
 class Resource_manager:
     _instance = None

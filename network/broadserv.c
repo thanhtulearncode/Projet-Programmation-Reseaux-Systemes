@@ -26,6 +26,42 @@ BOOL CtrlHandler(DWORD fdwCtrlType) {
     return FALSE;
 }
 
+void getLocalIPAddress(struct sockaddr_in* localAddr) {
+    IP_ADAPTER_ADDRESSES *adapterInfo = NULL, *adapter = NULL;
+    ULONG outBufLen = 0;
+    
+    // First call to get the required buffer size
+    GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, adapterInfo, &outBufLen);
+    
+    adapterInfo = (IP_ADAPTER_ADDRESSES*)malloc(outBufLen);
+    if (GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, adapterInfo, &outBufLen) != NO_ERROR) {
+        free(adapterInfo);
+        printf("Failed to retrieve network adapters.\n");
+        return;
+    }
+
+    // Iterate through network adapters
+    for (adapter = adapterInfo; adapter; adapter = adapter->Next) {
+        if (adapter->OperStatus != IfOperStatusUp) continue;  // Skip disabled interfaces
+        
+        IP_ADAPTER_UNICAST_ADDRESS* addr = adapter->FirstUnicastAddress;
+        if (addr && addr->Address.lpSockaddr->sa_family == AF_INET) {
+            struct sockaddr_in* sa = (struct sockaddr_in*)addr->Address.lpSockaddr;
+            
+            // Get the local IP address
+            localAddr->sin_family = AF_INET;
+            localAddr->sin_addr = sa->sin_addr;  // Copy the IP address
+            localAddr->sin_port = 0;  // Port is not relevant for the local IP
+
+            // Print local IP address
+            printf("Local IP Address: %s\n", inet_ntoa(localAddr->sin_addr));
+            break;  // Found the first valid interface, exit loop
+        }
+    }
+
+    free(adapterInfo);
+}
+
 void getBroadcastAddress(struct sockaddr_in* broadcastAddr) {
     IP_ADAPTER_ADDRESSES *adapterInfo = NULL, *adapter = NULL;
     ULONG outBufLen = 0;
@@ -121,15 +157,13 @@ int main(int argc, char* argv[]) {
     }
 
     // Get local IP address
-    getsockname(udp_sockfd, (struct sockaddr*)&local_addr, &local_len);
-    printf("Local IP address: %s\n", inet_ntoa(local_addr.sin_addr));
+    getLocalIPAddress(&local_addr);
 
     // Set broadcast address
     memset(&broadcast_addr, 0, sizeof(broadcast_addr));
     broadcast_addr.sin_family = AF_INET;
     getBroadcastAddress(&broadcast_addr);
     broadcast_addr.sin_port = htons(UDP_PORT);
-    printf("Broadcast address: %s\n", inet_ntoa(broadcast_addr.sin_addr));
 
     snprintf(buffer, BUF, "Broadcast message");
     if (sendto(udp_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&broadcast_addr, broadcast_len) == SOCKET_ERROR) {
