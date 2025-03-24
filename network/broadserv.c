@@ -70,6 +70,7 @@ void getBroadcastAddress(struct sockaddr_in* broadcastAddr) {
     free(adapterInfo);
 }
 
+
 void init_openssl() {
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
