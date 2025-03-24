@@ -28,6 +28,39 @@ BOOL CtrlHandler(DWORD fdwCtrlType) {
     return FALSE;
 }
 
+void getLocalIPAddress(struct sockaddr_in* localAddr) {
+    IP_ADAPTER_ADDRESSES *adapterInfo = NULL, *adapter = NULL;
+    ULONG outBufLen = 0;
+    
+    // First call to get the required buffer size
+    GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, adapterInfo, &outBufLen);
+    
+    adapterInfo = (IP_ADAPTER_ADDRESSES*)malloc(outBufLen);
+    if (GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, adapterInfo, &outBufLen) != NO_ERROR) {
+        free(adapterInfo);
+        printf("Failed to retrieve network adapters.\n");
+        return;
+    }
+    // Iterate through network adapters
+    for (adapter = adapterInfo; adapter; adapter = adapter->Next) {
+        if (adapter->OperStatus != IfOperStatusUp) continue;  // Skip disabled interfaces
+        
+        IP_ADAPTER_UNICAST_ADDRESS* addr = adapter->FirstUnicastAddress;
+        if (addr && addr->Address.lpSockaddr->sa_family == AF_INET) {
+            struct sockaddr_in* sa = (struct sockaddr_in*)addr->Address.lpSockaddr;
+            
+            // Get the local IP address
+            localAddr->sin_family = AF_INET;
+            localAddr->sin_addr = sa->sin_addr;  // Copy the IP address
+            localAddr->sin_port = 0;  // Port is not relevant for the local IP
+            // Print local IP address
+            printf("Local IP Address: %s\n", inet_ntoa(localAddr->sin_addr));
+            break;  // Found the first valid interface, exit loop
+        }
+    }
+    free(adapterInfo);
+}
+
 void getBroadcastAddress(struct sockaddr_in* broadcastAddr) {
     IP_ADAPTER_ADDRESSES *adapterInfo = NULL, *adapter = NULL;
     ULONG outBufLen = 0;
@@ -165,8 +198,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Get local IP address
-    getsockname(udp_sockfd, (struct sockaddr*)&local_addr, &local_len);
-    printf("Local IP address: %s\n", inet_ntoa(local_addr.sin_addr));
+    getLocalIPAddress(&local_addr);
 
     // Set broadcast address
     memset(&broadcast_addr, 0, sizeof(broadcast_addr));
@@ -199,6 +231,13 @@ int main(int argc, char* argv[]) {
 
     SSL_set_bio(ssl, bio, bio);
 
+    printf("Attempting DTLS handshake...\n");
+    if (SSL_accept(ssl) <= 0) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+    printf("DTLS handshake completed successfully.\n");
+
     printf("Server is running and waiting for messages...\n");
 
     while (1) {
@@ -210,28 +249,37 @@ int main(int argc, char* argv[]) {
             stop("Select error");
         }
 
-        // Check if there is a message from the client
+        // Vérifier les messages UDP non sécurisés
         if (FD_ISSET(client_sockfd, &readfds)) {
             memset(buffer, 0, BUF);
             n = recvfrom(client_sockfd, buffer, BUF, 0, (struct sockaddr*)&client_addr, &client_len);
             if (n == SOCKET_ERROR) {
                 printf("Receive error: %d\n", WSAGetLastError());
                 continue;
-            } 
-            printf("Message received from client: %s\n", buffer);
-            if (sendto(udp_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&broadcast_addr, broadcast_len) == SOCKET_ERROR) {
-                printf("Broadcast error: %d\n", WSAGetLastError());
+            }
+            buffer[n] = '\0'; // Terminer la chaîne reçue
+            printf("Message reçu du client (UDP non sécurisé) : %s\n", buffer);
+
+            // Traiter le message reçu
+            if (strncmp(buffer, "1;scan_rooms", 12) == 0) {
+                snprintf(buffer, BUF, "3;Utopia;120;120;0;Means;aggressive");
+            } else {
+                snprintf(buffer, BUF, "Commande inconnue");
+            }
+
+            // Répondre au client
+            if (sendto(client_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&client_addr, client_len) == SOCKET_ERROR) {
+                printf("Erreur d'envoi au client : %d\n", WSAGetLastError());
                 continue;
-            } 
-            printf("Message sent to SERVER C\n");
-            
+            }
+            printf("Réponse envoyée au client : %s\n", buffer);
         }
 
-        // Check if there is a message from SERVER C
+        // Vérifier les messages DTLS
         if (FD_ISSET(udp_sockfd, &readfds)) {
             memset(buffer, 0, BUF);
 
-            // Recevoir un message via DTLS
+            // Lire un message via DTLS
             int n = SSL_read(ssl, buffer, BUF);
             if (n <= 0) {
                 int err = SSL_get_error(ssl, n);
@@ -243,32 +291,17 @@ int main(int argc, char* argv[]) {
             }
 
             buffer[n] = '\0'; // Terminer la chaîne reçue
-            printf("Message reçu : %s\n", buffer);
+            printf("Message reçu via DTLS : %s\n", buffer);
 
             // Traiter le message reçu
-            if (strncmp(buffer, "1;scan_rooms", 12) == 0) {
-                snprintf(buffer, BUF, "3;Utopia;120;120;0;Means;aggressive");
-            } else {
-                snprintf(buffer, BUF, "Unknown command");
-            }
+            snprintf(buffer, BUF, "Réponse DTLS : %s", buffer);
 
             // Envoyer une réponse via DTLS
             if (SSL_write(ssl, buffer, strlen(buffer)) <= 0) {
                 ERR_print_errors_fp(stderr);
                 break;
             }
-            printf("Réponse envoyée : %s\n", buffer);
-
-            printf("Message received from SERVER C: %s, address: %s\n", buffer, inet_ntoa(udp_addr.sin_addr));
-            if (strcmp(inet_ntoa(udp_addr.sin_addr), inet_ntoa(local_addr.sin_addr)) == 0) {
-                printf("Ignored own broadcast from %s\n", inet_ntoa(udp_addr.sin_addr));
-                continue;
-            }
-            if (sendto(client_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&client_addr, client_len) == SOCKET_ERROR) {
-                printf("Send error: %d\n", WSAGetLastError());
-                continue;
-            } 
-            printf("Message sent to client.\n");
+            printf("Réponse envoyée via DTLS : %s\n", buffer);
         }
     }
 

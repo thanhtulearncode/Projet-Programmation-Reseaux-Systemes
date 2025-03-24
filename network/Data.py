@@ -116,8 +116,11 @@ class PacketManager:
             received_packets = None
             for sock in readable:
                 if sock == self.socket:
-                    
-                    received_packets,_= self.socket.recvfrom(BUF)
+                    try:
+                        received_packets, _ = self.socket.recvfrom(BUF)
+                    except ConnectionResetError as e:
+                        print(f"Erreur de connexion : {e}")
+                        return None
 
             return received_packets.decode('utf-8') if received_packets else None
     
