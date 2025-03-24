@@ -7,6 +7,7 @@ from Players import *
 from network.DataProcessor import DataProcessor
 from network.Game_Room import *
 from network.Data import *
+
 # Game Mode
 GameMode = None # "Utopia" or "Gold Rush"
 
@@ -1049,6 +1050,8 @@ def start_menu(save_file=None):
         print("Exiting game")
         sys.exit()
     elif action == 'Multiplayer':
+        dataProcesser = DataProcessor()
+        grm = GameRoomManager(data_processor=dataProcesser)  
         multiplayer_menu = MultiplayerMenu()
         result = multiplayer_menu.run()
         
@@ -1092,11 +1095,23 @@ def start_menu(save_file=None):
                             )
                             players.append(new_player)
                         
-                        # Start game immediately
-                        this_player = players[0]  # First player is host
+                        # Setup host player
+                        this_player = players[0]
                         PacketManager().player = this_player
                         Resource_manager(this_player)
-                        game_room = GameRoom(num_players, GameMode, map_size, this_player.civilization, this_player.ai_profile, password=password)
+                        
+                        # Create and setup game room
+                        game_room = GameRoom(
+                            number_of_players=num_players,
+                            game_mode=GameMode,
+                            map_size=map_size,
+                            civilization=this_player.civilization,
+                            ai_mode=this_player.ai_profile,
+                            password=password
+                        )
+                        GameRoomManager._room_password = password
+                        
+                        # Start game engine
                         game_engine = GameEngine(
                             game_mode=GameMode,
                             map_size=map_size,
@@ -1106,30 +1121,29 @@ def start_menu(save_file=None):
                         DataProcessor().packet_manager.send_packet()
                         pygame.quit()  # Moved after game setup but before running
                         curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 0))
-                        return  # Exit after game ends
+                        return
                     
         elif result == 'Join Room':
             join_menu = JoinRoomMenu() 
-            password = join_menu.run()
+            entered_password = join_menu.run()
             
-            if password == 'back':
+            if entered_password == 'back':
                 return start_menu(save_file)
             
-            if password:
-                # Initialize DataProcessor and scan for rooms
-                data_processor = DataProcessor()
-                grm = GameRoomManager(data_processor)
-                game_room = grm.scan_rooms(password)
+            if entered_password:
+                # Try to join room
+                GameRoomManager._room_password = entered_password
                 
+                game_room = grm.scan_rooms()
                 if not game_room:
                     print("No rooms available")
                     return start_menu(save_file)
                     
-                if not game_room.verify_password(password):
+                if not game_room.verify_password(entered_password):
                     print("Invalid password or room is full") 
                     return start_menu(save_file)
-                
-                # Join the found room
+                    
+                # Setup game state from room
                 GameMode = game_room.game_mode
                 map_size = game_room.map_size
                 num_players = game_room.number_of_players
@@ -1147,30 +1161,28 @@ def start_menu(save_file=None):
                     )
                     players.append(new_player)
                 
-                # Setup game
+                # Setup client player
                 pygame.quit()
                 this_player = players[game_room.player_count]
                 PacketManager().player = this_player
                 Resource_manager(this_player)
-                
                 from Game_Engine import GameEngine
+                # Create game engine and start
                 game_engine = GameEngine(
                     game_mode=GameMode,
                     map_size=map_size,
                     players=players,
                     sauvegarde=False
                 )
-                data_processor.game_engine = game_engine
-                
-                # Initialize resources and start game
+                DataProcessor().game_engine = game_engine
+                # Initialize and start game
                 PacketManager().package = Resource_manager.create_init_resource_request()
                 PacketManager().send_packet()
-                data_processor.update_data(True)
                 curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.id))
-                return  # Exit after game ends
+                return
 
-        return start_menu(save_file)  # Return to main menu if back selected
-
+        # Return to main menu if no action was completed
+        return start_menu(save_file)
 
 def start_game(stdscr, save_file=None):
     from Game_Engine import GameEngine

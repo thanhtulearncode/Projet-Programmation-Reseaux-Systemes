@@ -576,9 +576,10 @@ class GameEngine:
                                 PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
                                 PacketManager().send_packet()
                             else:
-                                requesting_played_id = request[0]
-                                resources = None ##TODO
-                                PacketManager().package = (Resource_manager.create_init_resource_response(requesting_played_id,resources))
+                                PacketManager().package = PacketManager().create_map_packet(self.map)
+                                DataProcessor().map = PacketManager().package
+                                PacketManager().send_packet()
+                                PacketManager().package = PacketManager().create_current_state_packet(self.players)
                                 PacketManager().send_packet()
                                 
                 # Clear the screen and display the new part of the map after moving

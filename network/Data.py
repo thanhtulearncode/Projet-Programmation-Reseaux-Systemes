@@ -5,7 +5,7 @@ import select
 import sys
 import subprocess
 from time import sleep
-from .Game_Room import GameRoom
+from .Game_Room import GameRoomManager
 
 BUF = 512
 SERVER_IP = "127.0.0.1"
@@ -100,7 +100,16 @@ class PacketManager:
         building.player.package.package += f"{building_packet}\n"
         print(building_packet)
                 
-
+    @classmethod
+    def create_current_state_packet(self, players):
+        packet = ""
+        for player in players:
+            for unit in player.units:
+                packet += self.create_unit_packet(unit, "current_unit")
+            for building in player.buildings:
+                packet += self.create_building_packet(building, "current_building")
+        
+        return packet
         
     def extract_package(self, row):
         PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
@@ -118,7 +127,7 @@ class PacketManager:
     #send self.package to the server
     def send_packet(self):
         self.socket.setblocking(False)
-        passroom = GameRoom().password
+        passroom = GameRoomManager._room_password
         if passroom:
             self.package += f";{passroom}"
         try:
@@ -132,16 +141,14 @@ class PacketManager:
             self.socket.setblocking(False)  
         except socket.error as e:
             sys.exit(1)
-        passroom = GameRoom().password
+        passroom = GameRoomManager._room_password
         while True:    
             readable, _, _ = select.select([self.socket], [], [],0)
             received_packets = None
             for sock in readable:
                 if sock == self.socket:
                     received_packets,_= self.socket.recvfrom(BUF)
-                    if received_packets:
-                        print(received_packets)
-                    if received_packets.endswith(f";{passroom}".encode('utf-8')):
+                    if received_packets and received_packets.endswith(f";{passroom}".encode('utf-8')):
                         received_packets.decode('utf-8')
                         received_packets = received_packets[:-len(f";{passroom}")]
                         return received_packets.decode('utf-8')

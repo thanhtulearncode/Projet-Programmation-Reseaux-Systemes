@@ -15,9 +15,9 @@ class GameRoomManager:
             self.player_id = None
             self.initialized = True
 
-    def scan_rooms(self, password=None):
+    def scan_rooms(self):
         packet_manager = self.data_processor.packet_manager
-        packet_manager.package = f"1;scan_rooms" + f";{password}"
+        packet_manager.package = f"1;scan_rooms"
         packet_manager.send_packet()
         sleep(0.05)
         respond = self.data_processor.update_data()
@@ -25,8 +25,8 @@ class GameRoomManager:
         if not respond:
             return None
         else:
-            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilization, ai_mode, password = respond
-            GameRoomManager._room_password = password
+            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilization, ai_mode= respond
+            #GameRoomManager._room_password = password
             map_size = (int(map_size_x), (int(map_size_y)))
             return GameRoom(
                 number_of_players=int(number_of_players), 
@@ -34,7 +34,7 @@ class GameRoomManager:
                 map_size=map_size, 
                 civilization=civilization, 
                 ai_mode=ai_mode,
-                password=password
+                password=GameRoomManager._room_password
             )
     
 class GameRoom:
@@ -60,5 +60,4 @@ class GameRoom:
 
     def verify_password(self, password):
         return password == GameRoomManager._room_password and self.player_count < self.number_of_players
-
 
