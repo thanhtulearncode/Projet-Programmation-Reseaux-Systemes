@@ -4,6 +4,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #define BUF 512
 #define UDP_PORT 8080
@@ -68,6 +70,43 @@ void getBroadcastAddress(struct sockaddr_in* broadcastAddr) {
     free(adapterInfo);
 }
 
+void init_openssl() {
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+}
+
+void cleanup_openssl() {
+    EVP_cleanup();
+}
+
+SSL_CTX* create_context() {
+    const SSL_METHOD* method;
+    SSL_CTX* ctx;
+
+    method = DTLS_server_method(); // Utiliser DTLS
+    ctx = SSL_CTX_new(method);
+    if (!ctx) {
+        perror("Unable to create SSL context");
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    return ctx;
+}
+
+void configure_context(SSL_CTX* ctx) {
+    // Charger le certificat et la clé privée
+    if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, char* argv[]) {
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE)) {
         stop("SetConsoleCtrlHandler failed");
@@ -77,6 +116,10 @@ int main(int argc, char* argv[]) {
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         stop("WSAStartup failed");
     }
+
+    init_openssl();
+    SSL_CTX* ctx = create_context();
+    configure_context(ctx);
 
     SOCKET udp_sockfd, client_sockfd;
     int n;
@@ -139,6 +182,24 @@ int main(int argc, char* argv[]) {
     fd_set readfds;
     int max_fd = (client_sockfd > udp_sockfd) ? client_sockfd : udp_sockfd;
 
+    // Configurer DTLS
+    BIO* bio = BIO_new_dgram(udp_sockfd, BIO_NOCLOSE);
+    if (!bio) {
+        perror("Failed to create BIO");
+        exit(EXIT_FAILURE);
+    }
+
+    SSL* ssl = SSL_new(ctx);
+    if (!ssl) {
+        perror("Unable to create SSL structure");
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    SSL_set_bio(ssl, bio, bio);
+
+    printf("Server is running and waiting for messages...\n");
+
     while (1) {
         FD_ZERO(&readfds);
         FD_SET(client_sockfd, &readfds);
@@ -168,11 +229,35 @@ int main(int argc, char* argv[]) {
         // Check if there is a message from SERVER C
         if (FD_ISSET(udp_sockfd, &readfds)) {
             memset(buffer, 0, BUF);
-            n = recvfrom(udp_sockfd, buffer, BUF, 0, (struct sockaddr*)&udp_addr, &udp_len);
-            if (n == SOCKET_ERROR) {
-                printf("Receive error: %d\n", WSAGetLastError());
-                continue;
-            } 
+
+            // Recevoir un message via DTLS
+            int n = SSL_read(ssl, buffer, BUF);
+            if (n <= 0) {
+                int err = SSL_get_error(ssl, n);
+                if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                    continue;
+                }
+                ERR_print_errors_fp(stderr);
+                break;
+            }
+
+            buffer[n] = '\0'; // Terminer la chaîne reçue
+            printf("Message reçu : %s\n", buffer);
+
+            // Traiter le message reçu
+            if (strncmp(buffer, "1;scan_rooms", 12) == 0) {
+                snprintf(buffer, BUF, "3;Utopia;120;120;0;Means;aggressive");
+            } else {
+                snprintf(buffer, BUF, "Unknown command");
+            }
+
+            // Envoyer une réponse via DTLS
+            if (SSL_write(ssl, buffer, strlen(buffer)) <= 0) {
+                ERR_print_errors_fp(stderr);
+                break;
+            }
+            printf("Réponse envoyée : %s\n", buffer);
+
             printf("Message received from SERVER C: %s, address: %s\n", buffer, inet_ntoa(udp_addr.sin_addr));
             if (strcmp(inet_ntoa(udp_addr.sin_addr), inet_ntoa(local_addr.sin_addr)) == 0) {
                 printf("Ignored own broadcast from %s\n", inet_ntoa(udp_addr.sin_addr));
@@ -186,8 +271,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+    BIO_free(bio);
     closesocket(udp_sockfd);
     closesocket(client_sockfd);
+    SSL_CTX_free(ctx);
+    cleanup_openssl();
     WSACleanup();
     return 0;
 }
