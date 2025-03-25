@@ -7,9 +7,9 @@ from frontend.Terrain import *
 from logger import debug_print
 from Units import *
 from Building import *
-from network.Data import *
-from network.DataProcessor import *
+from network.Data import PacketManager
 
+#packetManager = PacketManager()
 class Action:
     def __init__(self, game_map):
         self.map = game_map
@@ -352,16 +352,18 @@ class Action:
 
                 # Update unit's carrying load and the resource amount on the tile
                 if amount_to_gather > 0:
+                    unit.carrying[resource_type] += amount_to_gather
                     if resource_type == "Gold" or resource_type == "Wood":
-                        unit.carrying[resource_type] += amount_to_gather
                         tile.resource.amount -= amount_to_gather
+                        #create_resource_map_packet(self, resource, x, y, type):
+                        PacketManager.create_resource_map_packet(tile.resource, unit.target_resource[0], unit.target_resource[1], "update_resource")
                         # If resource is depleted, remove it from the map
                         if tile.resource.amount <= 0:
                             tile.resource = None
                             self.map.resources[resource_type].remove(unit.target_resource)
                     elif resource_type == "Food" and tile.building.name == "Farm":
-                        unit.carrying[resource_type] += amount_to_gather
                         tile.building.food -= amount_to_gather
+                        #packetManager.create_packet(tile, "food_gathered", amount_to_gather)
                         if tile.building.food <= 0:
                             Building.kill_building(unit.player, tile.building, self.map)                           
 
@@ -405,7 +407,6 @@ class Action:
                         if abs(unit.position[0] - new_position[0]) < 1.01 and abs(unit.position[1] - new_position[1]) < 1.01:
                             # Deposit resources and reset carrying load
                             if isinstance(building, Building):
-                                
                                 building.drop_point(unit, resource_type)
                             unit.carrying[resource_type] = 0
                             unit.task = None
@@ -500,6 +501,7 @@ class Action:
                 else:
                     self.debug_print(f"{unit.name} is attacking {enemy_unit.name}...", 'Red')
                     enemy_unit.hp -= unit.attack
+                    #packetManager.create_packet(enemy_unit, "attacked", unit.attack, unit)
                     if isinstance(enemy_unit, Building):
                             enemy_unit.is_attacked = True
                     if not isinstance(enemy_unit, Building):
@@ -658,8 +660,7 @@ class Action:
                         Unit.kill_unit(target.player, target, game_map)
                 else:
                     target.hp -= building.attack
+                    #packetManager.create_packet(target, "attacked", building.attack)
                     target.is_attacked = True
                     self.debug_print(f"{building.name} is attacking {target.name}...", 'Red')
                 return True
-
-

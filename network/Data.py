@@ -23,7 +23,7 @@ class PacketManager:
         if not PacketManager._initialized:
             self.player = None
             self.package = ""
-            self.map = ""
+            self.map = None
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.server_address = ("127.0.0.1")
             try:
@@ -65,50 +65,32 @@ class PacketManager:
     @classmethod
     def create_map_packet(self, map):
         map_packet = map.map_encoding()
-        map_packet = f"{0};map;{map_packet}*"
-        self.map = map_packet
-        return map_packet
+        return f"{0};map;{map_packet}"
         
     @classmethod
-    def create_resource_map_packet(self, resource_type, type, x, y, amount, current_time_call):
-        resource_packet = f"{current_time_call};{0};{type};{x};{y};{amount};{resource_type}"
-        self.package += f"{resource_packet}*"
-        return resource_packet
+    def create_resource_map_packet(self, resource, x, y, type):
+        resource_packet = f"{type};{resource.type};{x};{y};{resource.amount}"
+        #print(resource_packet)
         
     @classmethod
-    def create_unit_packet(self, unit, type, current_time_call, name = None, x = None, y = None, hp = None):
-        #target: name, x, y, hp
-        unit_packet = f"{current_time_call};{unit.player.id};{type};{name};{x};{y};{hp};"
-        unit_packet += f"{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction};"   
-        self.package += f"{unit_packet}*"
-        return unit_packet
+    def create_unit_packet(self, unit, type):
+        unit_packet = f"{unit.player.id};{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction}"   
+        return f"{unit_packet}*"
 
     @classmethod     
-    def create_building_packet(self, building, type, current_time_call, name = None, x = None, y = None, hp = None):
-        building_packet = f"{current_time_call};{building.player.id};{type};{name};{x};{y};{hp}"
-        building_packet += f"{building.name};{building.position[0]};{building.position[1]};{building.hp}"
-        self.package += f"{building_packet}*"
-        return building_packet
+    def create_building_packet(self, building, type):
+        building_packet = f"{building.player.id};{type};{building.name};{building.position[0]};{building.position[1]};{building.hp}"
+        return f"{building_packet}*"
 
     @classmethod
-    def create_current_state_packet(self, players, map):
+    def create_current_state_packet(self, players):
         packet = ""
         for player in players:
             for unit in player.units:
                 packet += self.create_unit_packet(unit, "current_unit")
             for building in player.buildings:
                 packet += self.create_building_packet(building, "current_building")
-        """
-        for x, y in map.resources["Gold"]:
-            tile = map.grid[y][x]
-            resource = tile.resource
-            packet += self.create_resource_map_packet(resource, x, y, "current_resource")
-        for x, y in map.resources["Wood"]:
-            tile = map.grid[y][x]
-            resource = tile.resource
-            packet += self.create_resource_map_packet(resource, x, y, "current_resource")"
-            "
-        """
+        
         return packet
 
 
@@ -151,6 +133,31 @@ class PacketManager:
 
             return received_packets.decode('utf-8') if received_packets else None
     
-   
+class Resource_manager:
+    _instance = None
+
+    def __new__(cls, player):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.player = player
+        return cls._instance
+    
+    def __init__(self, player):
+        if not hasattr(self, '_initialized'):
+            self._initialized = True
+            self.player = player
+        else:
+            self.player = player  # Ensure self.player is updated if already initialized
+        print("Resource Manager initialized for player", self.player)
+    @classmethod
+    def create_init_resource_request(self, target_player_id=0):
+        return f"{self._instance.player.id};{target_player_id}"
+    @classmethod
+    def create_init_resource_response(self, requesting_player_id, resources):
+        if self._instance.player.id == 0: 
+            resource_values = [str(amount) for amount in resources.values()]
+            resource_str = ";".join(resource_values)
+            return f"{requesting_player_id};{resource_str}"
+        return None
 
 print(PacketManager.process_packet(';remove_unit;2.v.515;31.2;109.717*;remove_unit;2.v.515;31.2;109.717*'))
