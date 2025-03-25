@@ -726,51 +726,39 @@ class GameEngine:
                     
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
-                    for player in self.players:
-                        request = DataProcessor().update_data() 
-                        if request:
-                            if request[1] == "scan_rooms":
-                                gr= GameRoom()
-                                PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
-                                PacketManager().send_packet()
-                            else:
-                                PacketManager().package = PacketManager().create_map_packet(self.map)
-                                PacketManager().send_packet()
-                        if player.id == this_player_id:
-                            for unit in player.units:
-                                if unit.task == "going_to_battle":
-                                    action.go_battle(unit, unit.target_attack, self.get_current_time())
-                                elif unit.task == "attacking":
-                                    action._attack(unit, unit.target_attack, self.get_current_time())
-                                elif unit.target_position:
-                                    target_x, target_y = unit.target_position
-                                    action.move_unit(unit, target_x, target_y, self.get_current_time())
-                                elif unit.task == "gathering" or unit.task == "returning":
-                                    action._gather(unit, unit.last_gathered, self.get_current_time())
-                                elif unit.task == "marching":
-                                    action.gather_resources(unit, unit.last_gathered, self.get_current_time())
-                                elif unit.task == "is_attacked":
-                                    action._attack(unit, unit.is_attacked_by, self.get_current_time())
-                                elif unit.task == "going_to_construction_site":
-                                    action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
-                                elif unit.task == "constructing":
-                                    action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
-                            for building in player.buildings:
-                                if hasattr(building, 'training_queue') and building.training_queue != []:
-                                    unit = building.training_queue[0]
-                                    Unit.train_unit(unit, unit.spawn_position[0], unit.spawn_position[1], player, unit.spawn_building, self.map, self.get_current_time())
-                                elif type(building).__name__ == "Keep":
-                                    nearby_enemies = IA.find_nearby_enemies(building.player.ai, max_distance=building.range, unit_position=building.position)  # 5 tile radius
-                                    if nearby_enemies:
-                                        closest_enemy = min(nearby_enemies, 
-                                            key=lambda e: IA.calculate_distance(building.player.ai, pos1=unit.position, pos2=e.position))
-                                        action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
-                                    else: 
-                                        building.target = None
-                            if self.turn % 50 == 0:
-                                PacketManager().package = PacketManager().create_current_state_packet([player], self.map)
-                                #PacketManager().package = player.package
-                                PacketManager().send_packet()
+                        player = self.get_player_by_id(this_player_id)
+                        for unit in player.units:
+                            if unit.task == "going_to_battle":
+                                action.go_battle(unit, unit.target_attack, self.get_current_time())
+                            elif unit.task == "attacking":
+                                action._attack(unit, unit.target_attack, self.get_current_time())
+                            elif unit.target_position:
+                                target_x, target_y = unit.target_position
+                                action.move_unit(unit, target_x, target_y, self.get_current_time())
+                            elif unit.task == "gathering" or unit.task == "returning":
+                                action._gather(unit, unit.last_gathered, self.get_current_time())
+                            elif unit.task == "marching":
+                                action.gather_resources(unit, unit.last_gathered, self.get_current_time())
+                            elif unit.task == "is_attacked":
+                                action._attack(unit, unit.is_attacked_by, self.get_current_time())
+                            elif unit.task == "going_to_construction_site":
+                                action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                            elif unit.task == "constructing":
+                                action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                        for building in player.buildings:
+                            if hasattr(building, 'training_queue') and building.training_queue != []:
+                                unit = building.training_queue[0]
+                                Unit.train_unit(unit, unit.spawn_position[0], unit.spawn_position[1], player, unit.spawn_building, self.map, self.get_current_time())
+                            elif type(building).__name__ == "Keep":
+                                nearby_enemies = IA.find_nearby_enemies(building.player.ai, max_distance=building.range, unit_position=building.position)  # 5 tile radius
+                                if nearby_enemies:
+                                    closest_enemy = min(nearby_enemies, 
+                                        key=lambda e: IA.calculate_distance(building.player.ai, pos1=unit.position, pos2=e.position))
+                                    action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
+                                else: 
+                                    building.target = None
+                        DataProcessor().processing()
+
 
                                 
                 # Clear the screen and display the new part of the map after moving

@@ -146,31 +146,6 @@ class PacketManager:
 
             return received_packets.decode('utf-8') if received_packets else None
     
-class Resource_manager:
-    _instance = None
-
-    def __new__(cls, player):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance.player = player
-        return cls._instance
-    
-    def __init__(self, player):
-        if not hasattr(self, '_initialized'):
-            self._initialized = True
-            self.player = player
-        else:
-            self.player = player  # Ensure self.player is updated if already initialized
-        print("Resource Manager initialized for player", self.player)
-    @classmethod
-    def create_init_resource_request(self, target_player_id=0):
-        return f"{self._instance.player.id};{target_player_id}"
-    @classmethod
-    def create_init_resource_response(self, requesting_player_id, resources):
-        if self._instance.player.id == 0: 
-            resource_values = [str(amount) for amount in resources.values()]
-            resource_str = ";".join(resource_values)
-            return f"{requesting_player_id};{resource_str}"
-        return None
+   
 
 print(PacketManager.process_packet(';remove_unit;2.v.515;31.2;109.717*;remove_unit;2.v.515;31.2;109.717*'))
