@@ -142,7 +142,9 @@ class PacketManager:
     def send_packet(self):
         """Chiffre et envoie un message au serveur."""
         self.socket.setblocking(False)
+        passroom = GameRoomManager._room_password
         try:
+            self.package += f";{passroom}"
             encrypted_message = self.encrypt_message(self.package)
             self.socket.sendto(encrypted_message, (SERVER_IP, self.server_port))
             print(f"Message chiffré envoyé au serveur")
@@ -156,6 +158,7 @@ class PacketManager:
             self.socket.setblocking(False)  
         except socket.error as e:
             sys.exit(1)
+        passroom = GameRoomManager._room_password
 
         while True:    
             readable, _, _ = select.select([self.socket], [], [], time_out)
@@ -165,13 +168,15 @@ class PacketManager:
                     
                     received_packets,_= self.socket.recvfrom(BUF)
 
-            if received_packets:
-                try:
-                    decrypted_message = self.decrypt_message(received_packets)
+                if received_packets:
+                    try:
+                        decrypted_message = self.decrypt_message(received_packets)
+                    except Exception as e:
+                        print(f"Erreur lors du déchiffrement : {e}")
+                        return None
+                if decrypted_message.endswith(f";{passroom}".encode('utf-8')):
+                    decrypted_message = decrypted_message[:-len(f";{passroom}")]
                     return decrypted_message
-                except Exception as e:
-                    print(f"Erreur lors du déchiffrement : {e}")
-                    return None
             return None
     
 class Resource_manager:

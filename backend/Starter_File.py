@@ -1134,7 +1134,7 @@ def start_menu(save_file=None):
                 # Try to join room
                 GameRoomManager._room_password = entered_password
                 
-                game_room = grm.scan_rooms()
+                game_room = grm.scan_rooms(password)
                 if not game_room:
                     print("No rooms available")
                     return start_menu(save_file)

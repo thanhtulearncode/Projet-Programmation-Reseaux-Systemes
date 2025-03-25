@@ -42,8 +42,6 @@ class GameRoomManager:
                 password=GameRoomManager._room_password
             )
     
-    def get_password(self):
-        return GameRoomManager._room_password
     
 class GameRoom:
     _instance = None
