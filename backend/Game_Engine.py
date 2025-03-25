@@ -566,9 +566,11 @@ class GameEngine:
                                         action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
                                     else: 
                                         building.target = None
-                        else:
-                            pass
-                            #processor.update_data()
+                        if self.turn % 50 == 0:
+                                PacketManager().package = PacketManager().create_current_state_packet([player])
+                                #PacketManager().package = player.package
+                                PacketManager().send_packet()
+
                         request = DataProcessor().update_data() 
                         if request:
                             if request[1] == "scan_rooms":
