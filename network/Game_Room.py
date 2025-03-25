@@ -1,17 +1,23 @@
 from time import sleep
-
+import hashlib
 class GameRoomManager:
     _instance = None
-
+    _room_password: str =""
+    
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(GameRoomManager, cls).__new__(cls)
         return cls._instance
+    
+    @classmethod
+    def get_aes_key(self) -> bytes:
+        """Retourne une clé AES valide générée à partir du mot de passe."""
+        return hashlib.sha256(GameRoomManager._room_password.encode('utf-8')).digest()
 
     def __init__(self, data_processor):
-        if not hasattr(self, 'initialized'):  # Ensure __init__ runs only once
+        if not hasattr(self, 'initialized'):
             self.data_processor = data_processor
-            self.player_id= None
+            self.player_id = None
             self.initialized = True
 
     def scan_rooms(self):
@@ -19,26 +25,33 @@ class GameRoomManager:
         packet_manager.package = f"1;scan_rooms"
         packet_manager.send_packet()
         sleep(0.05)
-        respond = self.data_processor.update_data(True)
+        respond = self.data_processor.update_data()
         print("The respond: ",respond)
         if not respond:
             return None
         else:
-            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilization, ai_mode = respond
-            map_size = (int(map_size_x), int(map_size_y))
-            gameroom = GameRoom(int(number_of_players), game_mode, map_size, civilization, ai_mode)
-            gameroom.player_count = int(player_count)
-            return gameroom
-        
+            number_of_players, game_mode, map_size_x, map_size_y, player_count, civilization, ai_mode= respond
+            #GameRoomManager._room_password = password
+            map_size = (int(map_size_x), (int(map_size_y)))
+            return GameRoom(
+                number_of_players=int(number_of_players), 
+                game_mode=game_mode, 
+                map_size=map_size, 
+                civilization=civilization, 
+                ai_mode=ai_mode,
+                password=GameRoomManager._room_password
+            )
+    
+    
 class GameRoom:
     _instance = None
-
+    
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(GameRoom, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, number_of_players=None, game_mode=None, map_size=None, civilization=None, ai_mode=None):
+    def __init__(self, number_of_players=None, game_mode=None, map_size=None, civilization=None, ai_mode=None, password=None):
         if not hasattr(self, 'initialized'):
             self.initialized = True
             self.room_id = "1"
@@ -48,5 +61,8 @@ class GameRoom:
             self.map_size = map_size
             self.civilization = civilization
             self.ai_mode = ai_mode
+            self.password = password
+            self.players = []
 
-# Create a global instance of GameRoom
+    def verify_password(self, password):
+        return password == GameRoomManager._room_password and self.player_count < self.number_of_players

@@ -715,6 +715,7 @@ class GameEngine:
                                 PacketManager().send_packet()
                                 PacketManager().package = PacketManager().create_current_state_packet(self.players)
                                 PacketManager().send_packet()
+                                gr.player_count +=1
                                 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

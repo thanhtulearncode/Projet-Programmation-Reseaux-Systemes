@@ -785,6 +785,196 @@ class PlayerSettingsMenu:
                                 other_button['civ_index']= button['civ_index']
             
             pygame.display.flip()
+class MultiplayerMenu:
+    def __init__(self, screen_width=800, screen_height=600):
+        self.screen = pygame.display.set_mode((screen_width, screen_height))
+        pygame.display.set_caption("AIge of EmpAIre - Multiplayer")
+        
+        self.colors = {
+            'background': (50, 50, 50),
+            'button': (175, 128, 79),
+            'button_hover': (150, 150, 150),
+            'text': (255, 255, 255)
+        }
+        
+        # Load background image
+        self.background_image = pygame.image.load(r'..\assets\MenuPhoto\parametrebueno.png')
+        self.background_image = pygame.transform.scale(self.background_image, (screen_width, screen_height))
+        
+        # Create buttons
+        self.buttons = [
+            {'text': 'Create Room', 'rect': pygame.Rect(300, 200, 200, 50)},
+            {'text': 'Join Room', 'rect': pygame.Rect(300, 270, 200, 50)},
+            {'text': 'Back', 'rect': pygame.Rect(300, 340, 200, 50)}
+        ]
+        
+        self.font = pygame.font.Font(None, 36)
+        self.title_font = pygame.font.Font(None, 48)
+    
+    def draw(self):
+        self.screen.blit(self.background_image, (0, 0))
+        
+        # Draw title
+        title = self.title_font.render("Multiplayer", True, self.colors['text'])
+        title_rect = title.get_rect(center=(400, 100))
+        self.screen.blit(title, title_rect)
+        
+        # Draw buttons
+        mouse_pos = pygame.mouse.get_pos()
+        for button in self.buttons:
+            color = self.colors['button_hover'] if button['rect'].collidepoint(mouse_pos) else self.colors['button']
+            pygame.draw.rect(self.screen, color, button['rect'], border_radius=5)
+            text = self.font.render(button['text'], True, self.colors['text'])
+            text_rect = text.get_rect(center=button['rect'].center)
+            self.screen.blit(text, text_rect)
+    
+    def run(self):
+        running = True
+        while running:
+            self.draw()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return None
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+                    for button in self.buttons:
+                        if button['rect'].collidepoint(mouse_pos):
+                            return button['text']
+            pygame.display.flip()
+
+class CreateRoomMenu:
+    def __init__(self, screen_width=800, screen_height=600):
+        self.screen = pygame.display.set_mode((screen_width, screen_height))
+        pygame.display.set_caption("Create Room")
+        
+        self.colors = {
+            'background': (50, 50, 50),
+            'button': (175, 128, 79),
+            'button_hover': (150, 150, 150),
+            'text': (255, 255, 255)
+        }
+        
+        self.background_image = pygame.image.load(r'..\assets\MenuPhoto\parametrebueno.png')
+        self.background_image = pygame.transform.scale(self.background_image, (screen_width, screen_height))
+        
+        self.password_input = {'text': '', 'rect': pygame.Rect(300, 250, 200, 40), 'active': True}
+        
+        self.buttons = [
+            {'text': 'Create', 'rect': pygame.Rect(300, 320, 200, 50)},
+            {'text': 'Back', 'rect': pygame.Rect(300, 390, 200, 50)}
+        ]
+        
+        self.font = pygame.font.Font(None, 36)
+
+    def run(self):
+        running = True
+        while running:
+            self.screen.blit(self.background_image, (0, 0))
+            
+            # Draw password field
+            pygame.draw.rect(self.screen, (70, 70, 70), self.password_input['rect'])
+            password_surface = self.font.render('*' * len(self.password_input['text']), True, self.colors['text'])
+            self.screen.blit(password_surface, (310, 260))
+            
+            # Draw label
+            label = self.font.render('Enter Room Password:', True, self.colors['text'])
+            self.screen.blit(label, (300, 210))
+            
+            # Draw buttons
+            mouse_pos = pygame.mouse.get_pos()
+            for button in self.buttons:
+                color = self.colors['button_hover'] if button['rect'].collidepoint(mouse_pos) else self.colors['button']
+                pygame.draw.rect(self.screen, color, button['rect'], border_radius=5)
+                text = self.font.render(button['text'], True, self.colors['text'])
+                text_rect = text.get_rect(center=button['rect'].center)
+                self.screen.blit(text, text_rect)
+                
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return None
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        return self.password_input['text']
+                    elif event.key == pygame.K_BACKSPACE:
+                        self.password_input['text'] = self.password_input['text'][:-1]
+                    elif event.unicode.isprintable():
+                        self.password_input['text'] += event.unicode
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    for button in self.buttons:
+                        if button['rect'].collidepoint(event.pos):
+                            if button['text'] == 'Create' and self.password_input['text']:
+                                return self.password_input['text']
+                            elif button['text'] == 'Back':
+                                return 'back'
+
+class JoinRoomMenu:
+    def __init__(self, screen_width=800, screen_height=600):
+        self.screen = pygame.display.set_mode((screen_width, screen_height))
+        pygame.display.set_caption("Join Room")
+        
+        self.colors = {
+            'background': (50, 50, 50),
+            'button': (175, 128, 79),
+            'button_hover': (150, 150, 150),
+            'text': (255, 255, 255)
+        }
+        
+        self.background_image = pygame.image.load(r'..\assets\MenuPhoto\parametrebueno.png')
+        self.background_image = pygame.transform.scale(self.background_image, (screen_width, screen_height))
+        
+        self.password_input = {'text': '', 'rect': pygame.Rect(300, 250, 200, 40), 'active': True}
+        
+        self.buttons = [
+            {'text': 'Join', 'rect': pygame.Rect(300, 320, 200, 50)},
+            {'text': 'Back', 'rect': pygame.Rect(300, 390, 200, 50)}
+        ]
+        
+        self.font = pygame.font.Font(None, 36)
+
+    def run(self):
+        running = True
+        while running:
+            self.screen.blit(self.background_image, (0, 0))
+            
+            # Draw password field
+            pygame.draw.rect(self.screen, (70, 70, 70), self.password_input['rect'])
+            password_surface = self.font.render('*' * len(self.password_input['text']), True, self.colors['text'])
+            self.screen.blit(password_surface, (310, 260))
+            
+            # Draw label
+            label = self.font.render('Enter Room Password:', True, self.colors['text'])
+            self.screen.blit(label, (300, 210))
+            
+            # Draw buttons
+            mouse_pos = pygame.mouse.get_pos()
+            for button in self.buttons:
+                color = self.colors['button_hover'] if button['rect'].collidepoint(mouse_pos) else self.colors['button']
+                pygame.draw.rect(self.screen, color, button['rect'], border_radius=5)
+                text = self.font.render(button['text'], True, self.colors['text'])
+                text_rect = text.get_rect(center=button['rect'].center)
+                self.screen.blit(text, text_rect)
+                
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return None
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        return self.password_input['text']
+                    elif event.key == pygame.K_BACKSPACE:
+                        self.password_input['text'] = self.password_input['text'][:-1]
+                    elif event.unicode.isprintable():
+                        self.password_input['text'] += event.unicode
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    for button in self.buttons:
+                        if button['rect'].collidepoint(event.pos):
+                            if button['text'] == 'Join' and self.password_input['text']:
+                                return self.password_input['text']
+                            elif button['text'] == 'Back':
+                                return 'back'
 
 def start_menu(save_file=None):
     menu = StartMenu()
@@ -857,6 +1047,141 @@ def start_menu(save_file=None):
         pygame.quit()
         print("Exiting game")
         sys.exit()
+    elif action == 'Multiplayer':
+        grm = GameRoomManager(DataProcessor())  
+        multiplayer_menu = MultiplayerMenu()
+        result = multiplayer_menu.run()
+        
+        if result == 'Back':
+            return start_menu(save_file)
+            
+        elif result == 'Create Room':
+            create_menu = CreateRoomMenu()
+            password = create_menu.run()
+            
+            if password == 'back':
+                return start_menu(save_file)
+            elif password:
+                settings_menu = GameSettingsMenu()
+                settings = settings_menu.run()
+                
+                if settings == 'back':
+                    return start_menu(save_file)
+                elif settings:
+                    from Game_Engine import GameEngine
+                    
+                    GameMode = settings['mode']
+                    map_size = settings['map_size']
+                    num_players = int(settings['num_players'])
+                    multi_player = True
+                    players.clear()
+                    
+                    player_settings_menu = PlayerSettingsMenu(num_players)
+                    player_settings = player_settings_menu.run()
+                    
+                    if player_settings == 'back':
+                        return start_menu(save_file)  # Go back to main menu
+                    elif player_settings:
+                        for i, settings in enumerate(player_settings):
+                            player_id = i 
+                            new_player = Player(
+                                f'Player {player_id}',
+                                settings['civilization'],
+                                settings['ai_mode'],
+                                player_id=player_id
+                            )
+                            players.append(new_player)
+                        
+                        # Setup host player
+                        this_player = players[0]
+                        PacketManager().player = this_player
+                        Resource_manager(this_player)
+                        
+                        # Create and setup game room
+                        game_room = GameRoom(
+                            number_of_players=num_players,
+                            game_mode=GameMode,
+                            map_size=map_size,
+                            civilization=this_player.civilization,
+                            ai_mode=this_player.ai_profile,
+                            password=password
+                        )
+                        GameRoomManager._room_password = password
+                        
+                        # Start game engine
+                        game_engine = GameEngine(
+                            game_mode=GameMode,
+                            map_size=map_size,
+                            players=players,
+                            sauvegarde=False )
+                        DataProcessor().game_engine = game_engine
+                        DataProcessor().packet_manager.send_packet()
+                        pygame.quit()  # Moved after game setup but before running
+                        curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 0))
+                        return
+                    
+        elif result == 'Join Room':
+            join_menu = JoinRoomMenu() 
+            entered_password = join_menu.run()
+            
+            if entered_password == 'back':
+                return start_menu(save_file)
+            
+            if entered_password:
+                # Try to join room
+                GameRoomManager._room_password = entered_password
+                
+                game_room = grm.scan_rooms()
+                if not game_room:
+                    print("No rooms available")
+                    return start_menu(save_file)
+                    
+                if not game_room.verify_password(entered_password):
+                    print("Invalid password or room is full") 
+                    return start_menu(save_file)
+                    
+                # Setup game state from room
+                GameMode = game_room.game_mode
+                map_size = game_room.map_size
+                num_players = game_room.number_of_players
+                game_room.player_count +=1
+                multi_player = True
+                players.clear()
+                
+                # Create players
+                for i in range(num_players):
+                    player_id = i
+                    new_player = Player(
+                        f'Player {player_id}',
+                        game_room.civilization,
+                        game_room.ai_mode,
+                        player_id=player_id
+                    )
+                    players.append(new_player)
+                
+                # Setup client player
+                pygame.quit()
+                this_player = players[game_room.player_count]
+                PacketManager().player = this_player
+                Resource_manager(this_player)
+                from Game_Engine import GameEngine
+                # Create game engine and start
+                game_engine = GameEngine(
+                    game_mode=GameMode,
+                    map_size=map_size,
+                    players=players,
+                    sauvegarde=False
+                )
+                DataProcessor().game_engine = game_engine
+                # Initialize and start game
+                PacketManager().package = Resource_manager.create_init_resource_request()
+                PacketManager().send_packet()
+                curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.id))
+                return
+
+        # Return to main menu if no action was completed
+        return start_menu(save_file)
+    """
     else: ## Multiplayer option
         grm= GameRoomManager(DataProcessor())
         game_room= grm.scan_rooms()
@@ -939,7 +1264,7 @@ def start_menu(save_file=None):
             PacketManager().send_packet()
             DataProcessor().update_data(True)
             curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.id))
-            
+            """
 
 
 def start_game(stdscr, save_file=None):
