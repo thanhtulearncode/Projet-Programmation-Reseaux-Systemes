@@ -894,6 +894,7 @@ def start_menu(save_file=None):
                     this_player = players[0]
                     PacketManager().player = this_player
                     print("this player:",this_player)
+                    Resource_manager(this_player)
                     game_room = GameRoom(num_players, GameMode, map_size, this_player.civilization, this_player.ai_profile)
                     game_engine = GameEngine(
                         game_mode=GameMode,
@@ -933,9 +934,10 @@ def start_menu(save_file=None):
                 players=players,
                 sauvegarde=False )
             DataProcessor().game_engine = game_engine
-            PacketManager().package = f"{this_player.id};map_request"
+            Resource_manager(this_player)
+            PacketManager().package = Resource_manager.create_init_resource_request()
             PacketManager().send_packet()
-            DataProcessor().processing()
+            DataProcessor().update_data(True)
             curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, this_player.id))
             
 
