@@ -698,7 +698,7 @@ class GameEngine:
                                         action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
                                     else: 
                                         building.target = None
-                            if self.turn % 50 == 0:
+                            if self.turn % 200 == 0:
                                 PacketManager().package = PacketManager().create_current_state_packet([player])
                                 #PacketManager().package = player.package
                                 PacketManager().send_packet()
