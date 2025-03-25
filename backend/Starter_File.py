@@ -1050,8 +1050,7 @@ def start_menu(save_file=None):
         print("Exiting game")
         sys.exit()
     elif action == 'Multiplayer':
-        dataProcesser = DataProcessor()
-        grm = GameRoomManager(data_processor=dataProcesser)  
+        grm = GameRoomManager(DataProcessor())  
         multiplayer_menu = MultiplayerMenu()
         result = multiplayer_menu.run()
         

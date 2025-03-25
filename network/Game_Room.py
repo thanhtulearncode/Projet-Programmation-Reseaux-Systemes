@@ -2,7 +2,8 @@ from time import sleep
 
 class GameRoomManager:
     _instance = None
-    _room_password = None  
+    _room_password = "secretpass"
+    _room_key =  '16_byte_key_1234'
     
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -36,6 +37,9 @@ class GameRoomManager:
                 ai_mode=ai_mode,
                 password=GameRoomManager._room_password
             )
+    
+    def get_password(self):
+        return GameRoomManager._room_password
     
 class GameRoom:
     _instance = None
