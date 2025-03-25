@@ -74,15 +74,16 @@ class PacketManager:
         return resource_packet
         
     @classmethod
-    def create_unit_packet(self, unit, type, x, y, hp, current_time_call):
-        unit_packet = f"{current_time_call};{unit.player.id};{type};{x};{y};{hp};"
+    def create_unit_packet(self, unit, type, current_time_call, name = None, x = None, y = None, hp = None):
+        #target: name, x, y, hp
+        unit_packet = f"{current_time_call};{unit.player.id};{type};{name};{x};{y};{hp};"
         unit_packet += f"{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction};"   
         self.package += f"{unit_packet}*"
         return unit_packet
 
     @classmethod     
-    def create_building_packet(self, building, type,  x, y, hp, current_time_call):
-        building_packet = f"{current_time_call};{building.player.id};{type};{x};{y};{hp}"
+    def create_building_packet(self, building, type, current_time_call, name = None, x = None, y = None, hp = None):
+        building_packet = f"{current_time_call};{building.player.id};{type};{name};{x};{y};{hp}"
         building_packet += f"{building.name};{building.position[0]};{building.position[1]};{building.hp}"
         self.package += f"{building_packet}*"
         return building_packet

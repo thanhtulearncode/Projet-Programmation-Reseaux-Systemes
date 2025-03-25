@@ -282,6 +282,7 @@ class Action:
                 # If a free tile was found, move the unit towards it
                 if free_tile:
                     # Update unit's position by calling move_unit
+                    packet = PacketManager.create_unit_packet(unit, "gather_resources", current_time_called, resource_type)
                     self.move_unit(unit, free_tile[0], free_tile[1], current_time_called)
                     unit.task = "marching"
                     return True
@@ -309,7 +310,7 @@ class Action:
             # Move to the target tile if not already there
             if not (abs(unit.position[0] - unit.target_resource[0]) < 0.1 and abs(unit.position[1] - unit.target_resource[1]) < 0.1):
                 # Update unit's position by calling move_unit
-                packet = PacketManager.create_unit_packet(unit, "gather_resources", unit.target_resource[0], unit.target_resource[1], None, current_time_called)
+                packet = PacketManager.create_unit_packet(unit, "gather_resources", current_time_called, resource_type)
                 if packet:
                     return
                 self.move_unit(unit, unit.target_resource[0], unit.target_resource[1], current_time_called)
@@ -470,6 +471,9 @@ class Action:
             unit.is_moving = False
             self._attack(unit, enemy_unit, current_time_called)
         else:
+            packet = PacketManager.create_unit_packet(unit, "go_battle", current_time_called, enemy_unit.name)
+            if packet:
+                return
             self.move_unit(unit, int(target_x), int(target_y), current_time_called)
 
     
@@ -492,7 +496,7 @@ class Action:
 
             time_since_last_hit = current_time_called - unit.last_hit_time
             if time_since_last_hit >= 1.0:  # Ensure at least 1 second between attacks
-                packet = PacketManager.create_unit_packet(unit, "_attack", enemy_unit.position[0], enemy_unit.position[1], enemy_unit.hp, current_time_called)
+                packet = PacketManager.create_unit_packet(unit, "_attack", current_time_called, enemy_unit.name, enemy_unit.position[0], enemy_unit.position[1], enemy_unit.hp)
                 if packet:
                     return
                 if unit.attack >= enemy_unit.hp:
@@ -568,7 +572,7 @@ class Action:
             adjacent_positions = self.get_adjacent_positions(x, y, building_type(player).size)
             for pos in adjacent_positions:
                 if self.map.is_tile_free_for_unit(pos[0], pos[1]):
-                    packet = PacketManager.create_unit_packet(unit, "construct_building", pos[0], pos[1], None, current_time_called)
+                    packet = PacketManager.create_unit_packet(unit, "construct_building", current_time_called, building_type, x, y)
                     if packet:
                         return
                     self.move_unit(unit, pos[0], pos[1], current_time_called)

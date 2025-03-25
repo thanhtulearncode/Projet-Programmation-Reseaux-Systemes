@@ -124,6 +124,120 @@ class GameEngine:
             self.map.grid[y][x].resource = None
 
     def update_units(self, unit_info):
+        current_time_called = float(unit_info[0])
+        player_id = int(unit_info[1])
+        action_type = unit_info[2]
+        target_name = unit_info[3]
+        target_x = int(float(unit_info[4])) if unit_info[4] != "None" else None
+        target_y = int(float(unit_info[5])) if unit_info[5] != "None" else None
+        target_hp = int(unit_info[6]) if unit_info[6] != "None" else None
+        unit_name = unit_info[7]
+        unit_x = int(float(unit_info[8]))
+        unit_y = int(float(unit_info[9]))
+        unit_hp = int(unit_info[10])
+        unit_task = unit_info[11]
+        unit_direction = unit_info[12]
+        
+        player = self.get_player_by_id(player_id)
+        
+        if action_type in ("spawn_unit", "current_unit"):
+            unit_classes = {"Swordsman": Swordsman, "Archer": Archer, "Horseman": Horseman, "Villager": Villager}
+            unit_class = next((cls for name, cls in unit_classes.items() if name in unit_name), Villager)
+            unit = unit_class(player, position=(unit_x, unit_y), name=unit_name)
+            unit.hp = unit_hp
+            unit.task = unit_task
+            unit.direction = unit_direction
+            
+            for u in player.units:
+                if u.name == unit_name:
+                    player.units.remove(u)
+                    u.player = None
+                    self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
+                    break
+            
+            player.units.append(unit)
+            player.population = len(player.units)
+            self.map.place_unit(unit_x, unit_y, unit)
+        
+        elif action_type == "place_unit":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    unit.position = (unit_x, unit_y)
+                    unit.hp = unit_hp  
+                    unit.task = unit_task
+                    unit.direction = unit_direction
+                    self.map.place_unit(unit_x, unit_y, unit)
+                    break
+        
+        elif action_type == "remove_unit":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    self.map.remove_unit(unit_x, unit_y, unit)
+                    break
+        
+        elif action_type == "kill_unit":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    Unit.kill_unit(player, unit, self.map)
+                    break
+        
+        elif action_type == "construct_building":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    Action.move_unit(unit, target_x, target_y, current_time_called)
+                    if unit.target_position is None:
+                        unit.task = "constructing"
+                        unit.direction = self.get_direction(unit.position[0], unit.position[1], target_x, target_y)
+        
+        elif action_type == "gather_resources":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    unit.target_resource = target_x, target_y
+                    Action.move_unit(unit, unit.target_resource[0], unit.target_resource[1], current_time_called)
+                    unit.task = "marching"
+        
+        elif action_type == "go_battle":
+            for unit in player.units:
+                if unit.name == unit_name:
+                    Action.move_unit(unit, target_x, target_y, current_time_called)
+                          
+        elif action_type == "_attack":
+            unit = None
+            for u in player.units:
+                if u.name == unit_name:
+                    unit = u
+                    break
+            ###
+            enemy_unit = unit.target_attack
+            if unit.attack >= enemy_unit.hp:
+                enemy_unit.hp = 0
+                if isinstance(enemy_unit, Building):
+                    Building.kill_building(enemy_unit.player, enemy_unit, self.map)
+                    self.debug_print(f"{unit.name} has destroyed the building {enemy_unit.name}.", 'Red')
+
+                else:
+                    Unit.kill_unit(enemy_unit.player, enemy_unit, self.map)
+                unit.task = None
+                del unit.last_hit_time
+                unit.target_attack = None
+                if hasattr(unit, 'path'):
+                    del unit.path
+                if hasattr(unit, 'last_move_time'):
+                    del unit.last_move_time
+            else:
+                self.debug_print(f"{unit.name} is attacking {enemy_unit.name}...", 'Red')
+                enemy_unit.hp -= unit.attack
+                if isinstance(enemy_unit, Building):
+                        enemy_unit.is_attacked = True
+                if not isinstance(enemy_unit, Building):
+                    enemy_unit.is_attacked_by = unit
+                    enemy_unit.task = "is_attacked"
+
+            unit.last_hit_time = current_time_called
+
+
+
+    def update_units(self, unit_info):
         #unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
         type = unit_info[1]
         unit_name = unit_info[2]
@@ -220,7 +334,79 @@ class GameEngine:
             for unit in player.units:
                 if unit.name == unit_name:
                     Unit.kill_unit(player, unit, self.map)
-            
+
+    def update_buildings(self, building_info):
+        player_id = int(building_info[1])
+        action_type = building_info[2]
+        target_name = building_info[3]
+        target_x = int(float(building_info[4])) if building_info[4] != "None" else None
+        target_y = int(float(building_info[5])) if building_info[5] != "None" else None
+        target_hp = int(building_info[6]) if building_info[6] != "None" else None
+        building_name = building_info[7]
+        building_x = int(float(building_info[8]))
+        building_y = int(float(building_info[9]))
+        building_hp = int(building_info[10])
+        building_task = building_info[11]
+        
+        player = self.get_player_by_id(player_id)
+        
+        if action_type in ["spawn_building", "current_building"]:
+            building_position = (building_x, building_y)
+            building_classes = {
+                "Town Center": TownCenter, "Barracks": Barracks, "Stable": Stable, 
+                "ArcheryRange": ArcheryRange, "Keep": Keep, "Farm": Farm, 
+                "House": House, "Camp": Camp
+            }
+            building_class = building_classes.get(building_name, None)
+            if building_class:
+                building = building_class(player)
+                building.position = building_position
+                building.hp = building_hp
+                x, y = building_position
+                self.map.place_building(x, y, building)
+                player.buildings.append(building)
+        
+        elif action_type == "construct_building":
+            building_classes = {"TownCenter": TownCenter, "Barracks": Barracks, "Stable": Stable, "ArcheryRange": ArcheryRange, "Keep": Keep}
+            building_class = building_classes.get(building_name, None)
+            if building_class:
+                building = building_class(player, position=(building_x, building_y))
+                building.hp = building_hp
+                building.task = building_task
+                
+                for b in player.buildings:
+                    if b.name == building_name:
+                        player.buildings.remove(b)
+                        b.player = None
+                        self.map.remove_building(int(b.position[0]), int(b.position[1]), b)
+                        break
+                
+                player.buildings.append(building)
+                self.map.place_building(building_x, building_y, building)
+        
+        elif action_type == "place_building":
+            for building in player.buildings:
+                if building.name == building_name:
+                    building.position = (building_x, building_y)
+                    building.hp = building_hp  
+                    building.task = building_task
+                    self.map.place_building(building_x, building_y, building)
+                    break
+        
+        elif action_type == "remove_building":
+            for building in player.buildings:
+                if building.name == building_name:
+                    self.map.remove_building(building_x, building_y, building)
+                    break
+        
+        elif action_type == "kill_building":
+            for building in player.buildings:
+                if building.position == (building_x, building_y):
+                    Building.kill_building(player, building, self.map)
+                    break
+        
+
+
     def update_buildings(self, building_info):
         #building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
         type = building_info[1]
