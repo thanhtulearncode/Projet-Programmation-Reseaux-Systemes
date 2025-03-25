@@ -23,7 +23,7 @@ class PacketManager:
         if not PacketManager._initialized:
             self.player = None
             self.package = ""
-            self.map = None
+            self.map = ""
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.server_address = ("127.0.0.1")
             try:
@@ -65,7 +65,9 @@ class PacketManager:
     @classmethod
     def create_map_packet(self, map):
         map_packet = map.map_encoding()
-        return f"{0};map;{map_packet}"
+        map_packet = f"{0};map;{map_packet}*"
+        self.map = map_packet
+        return map_packet
         
     @classmethod
     def create_resource_map_packet(self, resource_type, type, x, y, amount, current_time_call):
@@ -96,6 +98,7 @@ class PacketManager:
                 packet += self.create_unit_packet(unit, "current_unit")
             for building in player.buildings:
                 packet += self.create_building_packet(building, "current_building")
+        """
         for x, y in map.resources["Gold"]:
             tile = map.grid[y][x]
             resource = tile.resource
@@ -103,8 +106,9 @@ class PacketManager:
         for x, y in map.resources["Wood"]:
             tile = map.grid[y][x]
             resource = tile.resource
-            packet += self.create_resource_map_packet(resource, x, y, "current_resource")
-
+            packet += self.create_resource_map_packet(resource, x, y, "current_resource")"
+            "
+        """
         return packet
 
 

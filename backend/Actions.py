@@ -10,7 +10,6 @@ from Building import *
 from network.Data import *
 from network.DataProcessor import *
 
-#packetManager = PacketManager()
 class Action:
     def __init__(self, game_map):
         self.map = game_map
@@ -282,7 +281,6 @@ class Action:
                 # If a free tile was found, move the unit towards it
                 if free_tile:
                     # Update unit's position by calling move_unit
-                    packet = PacketManager.create_unit_packet(unit, "gather_resources", current_time_called, resource_type)
                     self.move_unit(unit, free_tile[0], free_tile[1], current_time_called)
                     unit.task = "marching"
                     return True
@@ -310,9 +308,6 @@ class Action:
             # Move to the target tile if not already there
             if not (abs(unit.position[0] - unit.target_resource[0]) < 0.1 and abs(unit.position[1] - unit.target_resource[1]) < 0.1):
                 # Update unit's position by calling move_unit
-                packet = PacketManager.create_unit_packet(unit, "gather_resources", current_time_called, resource_type)
-                if packet:
-                    return
                 self.move_unit(unit, unit.target_resource[0], unit.target_resource[1], current_time_called)
                 unit.task = "marching"
                 return True
@@ -358,9 +353,6 @@ class Action:
                 # Update unit's carrying load and the resource amount on the tile
                 if amount_to_gather > 0:
                     if resource_type == "Gold" or resource_type == "Wood":
-                        packet = PacketManager.create_resource_map_packet(resource_type, "_gather", unit.target_resource[0], unit.target_resource[1], tile.resource.amount, current_time_called)
-                        if packet:
-                            return
                         unit.carrying[resource_type] += amount_to_gather
                         tile.resource.amount -= amount_to_gather
                         # If resource is depleted, remove it from the map
@@ -368,9 +360,6 @@ class Action:
                             tile.resource = None
                             self.map.resources[resource_type].remove(unit.target_resource)
                     elif resource_type == "Food" and tile.building.name == "Farm":
-                        packet = PacketManager.create_resource_map_packet(resource_type, "_gather", unit.target_resource[0], unit.target_resource[1], tile.building.food, current_time_called)
-                        if packet:
-                            return
                         unit.carrying[resource_type] += amount_to_gather
                         tile.building.food -= amount_to_gather
                         if tile.building.food <= 0:
@@ -471,9 +460,6 @@ class Action:
             unit.is_moving = False
             self._attack(unit, enemy_unit, current_time_called)
         else:
-            packet = PacketManager.create_unit_packet(unit, "go_battle", current_time_called, enemy_unit.name)
-            if packet:
-                return
             self.move_unit(unit, int(target_x), int(target_y), current_time_called)
 
     
@@ -496,9 +482,6 @@ class Action:
 
             time_since_last_hit = current_time_called - unit.last_hit_time
             if time_since_last_hit >= 1.0:  # Ensure at least 1 second between attacks
-                packet = PacketManager.create_unit_packet(unit, "_attack", current_time_called, enemy_unit.name, enemy_unit.position[0], enemy_unit.position[1], enemy_unit.hp)
-                if packet:
-                    return
                 if unit.attack >= enemy_unit.hp:
                     enemy_unit.hp = 0
                     if isinstance(enemy_unit, Building):
@@ -517,7 +500,6 @@ class Action:
                 else:
                     self.debug_print(f"{unit.name} is attacking {enemy_unit.name}...", 'Red')
                     enemy_unit.hp -= unit.attack
-                    #packetManager.create_packet(enemy_unit, "attacked", unit.attack, unit)
                     if isinstance(enemy_unit, Building):
                             enemy_unit.is_attacked = True
                     if not isinstance(enemy_unit, Building):
@@ -572,9 +554,6 @@ class Action:
             adjacent_positions = self.get_adjacent_positions(x, y, building_type(player).size)
             for pos in adjacent_positions:
                 if self.map.is_tile_free_for_unit(pos[0], pos[1]):
-                    packet = PacketManager.create_unit_packet(unit, "construct_building", current_time_called, building_type, x, y)
-                    if packet:
-                        return
                     self.move_unit(unit, pos[0], pos[1], current_time_called)
                     break
         
@@ -644,7 +623,6 @@ class Action:
                 Building.kill_building(player, self.map.grid[y][x].building, self.map)
             
             # Spawn new building
-            #packet = PacketManager.create_building_packet()
             Building.spawn_building(player, x, y, building_type, self.map)
 
             # Mark construction as completed
@@ -680,7 +658,6 @@ class Action:
                         Unit.kill_unit(target.player, target, game_map)
                 else:
                     target.hp -= building.attack
-                    #packetManager.create_packet(target, "attacked", building.attack)
                     target.is_attacked = True
                     self.debug_print(f"{building.name} is attacking {target.name}...", 'Red')
                 return True

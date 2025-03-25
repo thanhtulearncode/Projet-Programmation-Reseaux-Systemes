@@ -108,12 +108,7 @@ class Map:
                     resource = Wood()
                     tile.resource = resource
                     self.resources["Wood"].append((x, y))  # Store Wood resource position
-        """
-        for x, y in self.resources["Wood"]:
-            PacketManager.create_resource_map_packet(self.grid[y][x].resource, x, y, "generate")
-        for x, y in self.resources["Gold"]:
-            PacketManager.create_resource_map_packet(self.grid[y][x].resource, x, y, "generate")"
-        """
+
 
     def update_resources_map(self, resources_map_packet):
         resources_map_packet = resources_map_packet.split("\n")
@@ -171,14 +166,11 @@ class Map:
                         if self.grid[y + j][x + i].rubble in self.rubbles:
                             self.rubbles.remove(self.grid[y + j][x + i].rubble)
             self.set_id(building)
-            #building.player.package.create_packet(building, "place_building")
                         
 
     def remove_building(self, x, y, building):
-        #building.player.package.create_packet(building, "remove_building")
         for i in range(building.size):
             for j in range(building.size):
-                #packetManager.create_packet(building, "remove_building")
                 self.grid[y + j][x + i].building = None
                 if building.name == "Construct":
                     continue
@@ -193,14 +185,11 @@ class Map:
             tile = self.grid[y][x]
             tile.unit.append(unit)  # Place the unit on the tile
             self.set_id(unit)
-            #unit.player.package += PacketManager.create_unit_packet(unit, "place_unit")
 
     def remove_unit(self, x, y, unit):
-        #unit.player.package += PacketManager.create_unit_packet(unit, "remove_unit")
         tile = self.grid[y][x]
         if tile.unit is not None and unit in tile.unit:
             tile.unit.remove(unit)  # Remove the unit from the tile
-            #packetManager.create_packet(unit, "remove_unit")
         else:
             print(f"Terrain File : No unit on tile ({x}, {y})")
 
@@ -208,7 +197,6 @@ class Map:
         if 0 <= target_x < self.width and 0 <= target_y < self.height:
             self.remove_unit(start_x, start_y, unit)
             self.place_unit(target_x, target_y, unit)
-            #packetManager.create_packet(unit, "move_unit")
         else:
             print(f"Terrain File : Target ({target_x}, {target_y}) is out of bounds.")
             

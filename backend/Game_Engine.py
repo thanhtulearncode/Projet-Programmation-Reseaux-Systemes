@@ -123,6 +123,77 @@ class GameEngine:
         if self.map.grid[y][x].resource.amount <= 0:
             self.map.grid[y][x].resource = None
 
+    def load_current_state(self, packet):
+        if packet[1] and "unit" in packet[2]:
+            player_id = int(packet[1])
+            action_type = packet[2]
+            target_name = packet[3]
+            target_x = int(float(packet[4])) if packet[4] != "None" else None
+            target_y = int(float(packet[5])) if packet[5] != "None" else None
+            target_hp = int(packet[6]) if packet[6] != "None" else None
+            unit_name = packet[7]
+            unit_x = int(float(packet[8]))
+            unit_y = int(float(packet[9]))
+            unit_hp = int(packet[10])
+            unit_task = packet[11]
+            unit_direction = packet[12]
+            
+            player = self.get_player_by_id(player_id)
+
+            if action_type in ("spawn_unit", "current_unit"):
+                unit_classes = {"Swordsman": Swordsman, "Archer": Archer, "Horseman": Horseman, "Villager": Villager}
+                unit_class = next((cls for name, cls in unit_classes.items() if name in unit_name), Villager)
+                unit = unit_class(player, position=(unit_x, unit_y), name=unit_name)
+                unit.hp = unit_hp
+                unit.task = unit_task
+                unit.direction = unit_direction
+                
+                for u in player.units:
+                    if u.name == unit_name:
+                        player.units.remove(u)
+                        u.player = None
+                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
+                        break
+                
+                player.units.append(unit)
+                player.population = len(player.units)
+                self.map.place_unit(unit_x, unit_y, unit)
+        elif packet[1] and "building" in packet[2]:
+            player_id = int(packet[1])
+            action_type = packet[2]
+            target_name = packet[3]
+            target_x = int(float(packet[4])) if packet[4] != "None" else None
+            target_y = int(float(packet[5])) if packet[5] != "None" else None
+            target_hp = int(packet[6]) if packet[6] != "None" else None
+            building_name = packet[7]
+            building_x = int(float(packet[8]))
+            building_y = int(float(packet[9]))
+            building_hp = int(packet[10])
+            
+            player = self.get_player_by_id(player_id)
+            
+            if action_type in ["spawn_building", "current_building"]:
+                building_position = (building_x, building_y)
+                building_classes = {
+                    "Town Center": TownCenter, "Barracks": Barracks, "Stable": Stable, 
+                    "ArcheryRange": ArcheryRange, "Keep": Keep, "Farm": Farm, 
+                    "House": House, "Camp": Camp
+                }
+                building_class = building_classes.get(building_name, None)
+                if building_class:
+                    building = building_class(player)
+                    building.position = building_x, building_y
+                    for b in player.buildings:
+                        if b.position == building.position:
+                            player.building.remove(b)
+                            b.player = None
+                            self.map.remove_building(int(u.position[0]), int(u.position[1]), b)
+                    self.map.place_building(building_x, building_y, building)
+                    player.buildings.append(building)
+        else:
+            return
+
+
     def update_units(self, unit_info):
         current_time_called = float(unit_info[0])
         player_id = int(unit_info[1])
@@ -139,7 +210,7 @@ class GameEngine:
         unit_direction = unit_info[12]
         
         player = self.get_player_by_id(player_id)
-        
+
         if action_type in ("spawn_unit", "current_unit"):
             unit_classes = {"Swordsman": Swordsman, "Archer": Archer, "Horseman": Horseman, "Villager": Villager}
             unit_class = next((cls for name, cls in unit_classes.items() if name in unit_name), Villager)
@@ -158,182 +229,57 @@ class GameEngine:
             player.units.append(unit)
             player.population = len(player.units)
             self.map.place_unit(unit_x, unit_y, unit)
-        
-        elif action_type == "place_unit":
-            for unit in player.units:
-                if unit.name == unit_name:
-                    unit.position = (unit_x, unit_y)
-                    unit.hp = unit_hp  
-                    unit.task = unit_task
-                    unit.direction = unit_direction
-                    self.map.place_unit(unit_x, unit_y, unit)
-                    break
-        
-        elif action_type == "remove_unit":
-            for unit in player.units:
-                if unit.name == unit_name:
-                    self.map.remove_unit(unit_x, unit_y, unit)
-                    break
-        
         elif action_type == "kill_unit":
             for unit in player.units:
                 if unit.name == unit_name:
                     Unit.kill_unit(player, unit, self.map)
-                    break
-        
-        elif action_type == "construct_building":
-            for unit in player.units:
-                if unit.name == unit_name:
-                    Action.move_unit(unit, target_x, target_y, current_time_called)
-                    if unit.target_position is None:
-                        unit.task = "constructing"
-                        unit.direction = self.get_direction(unit.position[0], unit.position[1], target_x, target_y)
-        
-        elif action_type == "gather_resources":
-            for unit in player.units:
-                if unit.name == unit_name:
-                    unit.target_resource = target_x, target_y
-                    Action.move_unit(unit, unit.target_resource[0], unit.target_resource[1], current_time_called)
-                    unit.task = "marching"
-        
-        elif action_type == "go_battle":
-            for unit in player.units:
-                if unit.name == unit_name:
-                    Action.move_unit(unit, target_x, target_y, current_time_called)
-                          
+        elif action_type == "going_to_battle":
+            unit = None
+            for u in player.units:
+                if u.name == unit_name:
+                    unit = u
+            Action(self.map).go_battle(unit, unit.target_attack, self.get_current_time())
         elif action_type == "_attack":
             unit = None
             for u in player.units:
                 if u.name == unit_name:
                     unit = u
-                    break
-            ###
-            enemy_unit = unit.target_attack
-            if unit.attack >= enemy_unit.hp:
-                enemy_unit.hp = 0
-                if isinstance(enemy_unit, Building):
-                    Building.kill_building(enemy_unit.player, enemy_unit, self.map)
-                    self.debug_print(f"{unit.name} has destroyed the building {enemy_unit.name}.", 'Red')
-
-                else:
-                    Unit.kill_unit(enemy_unit.player, enemy_unit, self.map)
-                unit.task = None
-                del unit.last_hit_time
-                unit.target_attack = None
-                if hasattr(unit, 'path'):
-                    del unit.path
-                if hasattr(unit, 'last_move_time'):
-                    del unit.last_move_time
-            else:
-                self.debug_print(f"{unit.name} is attacking {enemy_unit.name}...", 'Red')
-                enemy_unit.hp -= unit.attack
-                if isinstance(enemy_unit, Building):
-                        enemy_unit.is_attacked = True
-                if not isinstance(enemy_unit, Building):
-                    enemy_unit.is_attacked_by = unit
-                    enemy_unit.task = "is_attacked"
-
-            unit.last_hit_time = current_time_called
-
-
-
-    def update_units(self, unit_info):
-        #unit_packet = f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id};{unit.task};{unit.direction}"   
-        type = unit_info[1]
-        unit_name = unit_info[2]
-        unit_position = int(float(unit_info[3])), int(float(unit_info[4]))
-        unit_health = int(unit_info[5])
-        player_id = int(unit_info[0])
-        player = self.get_player_by_id(player_id)
-        unit_task = unit_info[6]
-        unit_direction = unit_info[7]
-        if type == "spawn_unit" or type == "current_unit":
-            unit_position = int(unit_position[0]), int(unit_position[1])
-            if "Swordsman" in unit_name:
-                unit = Swordsman(player)
-                unit.position = unit_position
-                unit.hp = unit_health
-                unit.task = unit_task
-                unit.direction = unit_direction
-                for u in player.units:
-                    if u.name == unit_name:
-                        player.units.remove(u)
-                        u.player = None
-                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
-                player.units.append(unit)
-                x, y = unit_position
-                player.population = len(player.units)
-                self.map.place_unit(x, y, unit)
-            elif "Archer" in unit_name:
-                unit = Archer(player)
-                unit.position = unit_position
-                unit.position = unit_position
-                unit.hp = unit_health
-                unit.task = unit_task
-                unit.direction = unit_direction
-                for u in player.units:
-                    if u.name == unit_name:
-                        player.units.remove(u)
-                        u.player = None
-                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
-                player.units.append(unit)
-                x, y = unit_position
-                player.population = len(player.units)
-                self.map.place_unit(x, y, unit)
-            elif "Horseman" in unit_name:
-                unit = Horseman(player, position = unit_position, name = unit_name)
-                unit.hp = unit_health
-                unit.task = unit_task
-                unit.direction = unit_direction
-                for u in player.units:
-                    if u.name == unit_name:
-                        player.units.remove(u)
-                        u.player = None
-                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
-                player.units.append(unit)
-                x, y = unit_position
-                player.population = len(player.units)
-                self.map.place_unit(x, y, unit)
-            else:
-                #Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
-                unit = Villager(player, position = unit_position, name = unit_name)
-                unit.hp = unit_health
-                unit.task = unit_task
-                unit.direction = unit_direction
-                for u in player.units:
-                    if u.name == unit_name:
-                        player.units.remove(u)
-                        u.player = None
-                        self.map.remove_unit(int(u.position[0]), int(u.position[1]), u)
-                player.units.append(unit)
-                x, y = unit_position
-                player.population = len(player.units)
-                self.map.place_unit(x, y, unit)
-
-        elif type == "place_unit":
-            for unit in player.units:
-                if unit.name == unit_name:
-                    unit.position = unit_position
-                    unit.hp = unit_health  
-                    unit.task = unit_task
-                    unit.direction = unit_direction
-                    self.map.place_unit(int(unit_position[0]), int(unit_position[1]), unit)
-                    break
-
-        elif type == "remove_unit":
-            print("Huy dep trai1")
-            for unit in player.units:
-                print(unit.name)
-                print(unit_name)
-                if unit.name == unit_name:
-                    print("Huy dep trai2")
-                    self.map.remove_unit(int(unit_position[0]), int(unit_position[1]), unit)
-                    print("Huy dep trai3")
-                    break
-        elif type == "kill_unit":
-            for unit in player.units:
-                if unit.name == unit_name:
-                    Unit.kill_unit(player, unit, self.map)
+            enemy = None
+            if unit.target_attack and unit.target_attack.name == target_name:
+                enemy = unit.target_attack
+            elif unit.is_attacked_by and unit.is_attacked_by.name == target_name:
+                enemy = unit.is_attacked_by
+            Action(self.map)._attack(unit, enemy, self.get_current_time())
+        elif action_type == "move_unit":
+            unit = None
+            for u in player.units:
+                if u.name == unit_name:
+                    unit = u
+            Action(self.map).move_unit(unit, target_x, target_y, self.get_current_time())
+        elif action_type == "_gather":
+            unit = None
+            for u in player.units:
+                if u.name == unit_name:
+                    unit = u
+            Action(self.map)._gather(unit, target_name, self.get_current_time())
+        elif action_type == "gather_resources":
+            unit = None
+            for u in player.units:
+                if u.name == unit_name:
+                    unit = u
+            Action(self.map).gather_resources(unit, unit.last_gathered, self.get_current_time())
+        elif action_type == "construct_building":
+            unit = None
+            for u in player.units:
+                if u.name == unit_name:
+                    unit = u
+            Action(self.map).construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+        elif action_type == "_construct":
+            unit = None
+            for u in player.units:
+                if u.name == unit_name:
+                    unit = u
+            Action(self.map)._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
 
     def update_buildings(self, building_info):
         player_id = int(building_info[1])
@@ -346,7 +292,6 @@ class GameEngine:
         building_x = int(float(building_info[8]))
         building_y = int(float(building_info[9]))
         building_hp = int(building_info[10])
-        building_task = building_info[11]
         
         player = self.get_player_by_id(player_id)
         
@@ -360,129 +305,28 @@ class GameEngine:
             building_class = building_classes.get(building_name, None)
             if building_class:
                 building = building_class(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-                player.buildings.append(building)
-        
-        elif action_type == "construct_building":
-            building_classes = {"TownCenter": TownCenter, "Barracks": Barracks, "Stable": Stable, "ArcheryRange": ArcheryRange, "Keep": Keep}
-            building_class = building_classes.get(building_name, None)
-            if building_class:
-                building = building_class(player, position=(building_x, building_y))
-                building.hp = building_hp
-                building.task = building_task
-                
+                building.position = building_x, building_y
                 for b in player.buildings:
-                    if b.name == building_name:
-                        player.buildings.remove(b)
+                    if b.position == building.position:
+                        player.building.remove(b)
                         b.player = None
                         self.map.remove_building(int(b.position[0]), int(b.position[1]), b)
-                        break
-                
-                player.buildings.append(building)
                 self.map.place_building(building_x, building_y, building)
-        
-        elif action_type == "place_building":
-            for building in player.buildings:
-                if building.name == building_name:
-                    building.position = (building_x, building_y)
-                    building.hp = building_hp  
-                    building.task = building_task
-                    self.map.place_building(building_x, building_y, building)
-                    break
-        
-        elif action_type == "remove_building":
-            for building in player.buildings:
-                if building.name == building_name:
-                    self.map.remove_building(building_x, building_y, building)
-                    break
+                player.buildings.append(building)
         
         elif action_type == "kill_building":
             for building in player.buildings:
                 if building.position == (building_x, building_y):
                     Building.kill_building(player, building, self.map)
                     break
-        
-
-
-    def update_buildings(self, building_info):
-        #building_packet = f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
-        type = building_info[1]
-        building_name = building_info[2]
-        building_position = int(float(building_info[3])), int(float(building_info[4]))
-        building_hp = int(building_info[5])
-        player_id = int(building_info[0])
-        player = self.get_player_by_id(player_id)
-        if type == "spawn_building" or type == "current_building":
-            building_position = int(building_position[0]), int(building_position[1])
-            if building_name == "Town Center":
-                building = TownCenter(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)  # Use the passed map instead of cls.map
-                player.buildings.append(building)
-            elif building_name == "Barracks":
-                building = Barracks(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-            elif building_name == "Stable":
-                building = Stable(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-            elif building_name == "ArcheryRange":
-                building = ArcheryRange(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-            elif building_name == "Keep":
-                building = Keep(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-            elif building_name == "Farm":
-                building = Farm(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-            elif building_name == "House":
-                building = House(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-            elif building_name == "Camp":
-                building = Camp(player)
-                building.position = building_position
-                building.hp = building_hp
-                x, y = building_position
-                self.map.place_building(x, y, building)
-            else: 
-                return
-        elif type == "kill_building":
-            for building in player.buildings:
-                if building.position == building_position:
-                    break
-                Building.kill_building(player, building, self.map)
             
     def update_game(self, packet):
-        if packet[1] and "unit" in packet[1]:
-            print("Huy dep trai 123")
-            self.update_units(packet)
-        elif packet[1] and "building" in packet[1]:
+        if packet[1] and "building" in packet[2]:
             print("Huy dep trai 456")
             self.update_buildings(packet)
-        elif packet[1] and ("Gold" == packet[2] or "Wood" == packet[2]):
-            pass
+        elif packet[1] and "unit" in packet[2]:
+            print("Huy dep trai 123")
+            self.update_units(packet)
         else:
             return
     
@@ -611,22 +455,40 @@ class GameEngine:
                     for player in self.players:
                         for unit in player.units:
                             if unit.task == "going_to_battle":
-                                action.go_battle(unit, unit.target_attack, self.get_current_time())
+                                enemy = unit.target_attack
+                                PacketManager.create_unit_packet(unit, "go_battle", self.get_current_time, enemy.name, enemy.position[0], enemy.position[1], enemy.hp)
+                                #action.go_battle(unit, unit.target_attack, self.get_current_time())
                             elif unit.task == "attacking":
-                                action._attack(unit, unit.target_attack, self.get_current_time())
+                                enemy = unit.target_attack
+                                PacketManager.create_unit_packet(unit, "_attack", self.get_current_time, enemy.name, enemy.position[0], enemy.position[1], enemy.hp)
+                                #action._attack(unit, unit.target_attack, self.get_current_time())
                             elif unit.target_position:
                                 target_x, target_y = unit.target_position
-                                action.move_unit(unit, target_x, target_y, self.get_current_time())
+                                PacketManager.create_unit_packet(unit, "move_unit", self.get_current_time(), None, target_x, target_y)
+                                #action.move_unit(unit, target_x, target_y, self.get_current_time())
                             elif unit.task == "gathering" or unit.task == "returning":
-                                action._gather(unit, unit.last_gathered, self.get_current_time())
+                                resource_type = unit.last_gathered
+                                x, y = unit.target_resource
+                                PacketManager.create_unit_packet(unit, "_gather", self.get_current_time(), resource_type, x, y)
+                                #action._gather(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "marching":
-                                action.gather_resources(unit, unit.last_gathered, self.get_current_time())
+                                resource_type = unit.last_gathered
+                                PacketManager.create_unit_packet(unit, "gather_resources", self.get_current_time(), resource_type)
+                                #action.gather_resources(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "is_attacked":
-                                action._attack(unit, unit.is_attacked_by, self.get_current_time())
+                                enemy = unit.is_attacked_by
+                                PacketManager.create_unit_packet(unit, "_attack", self.get_current_time, enemy.name, enemy.position[0], enemy.position[1], enemy.hp)
+                                #action._attack(unit, unit.is_attacked_by, self.get_current_time())
                             elif unit.task == "going_to_construction_site":
-                                action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                                building_type = unit.construction_type.name
+                                x, y = unit.target_buiilding
+                                PacketManager.create_unit_packet(unit, "construct_building", self.get_current_time(), building_type, x, y)
+                                #action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                             elif unit.task == "constructing":
-                                action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                                building_type = unit.construction_type.name
+                                x, y = unit.target_buiilding
+                                PacketManager.create_unit_packet(unit, "_construct", self.get_current_time(), building_type, x, y)
+                                #action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                         for building in player.buildings:
                             if hasattr(building, 'training_queue') and building.training_queue != []:
                                 unit = building.training_queue[0]
@@ -915,22 +777,40 @@ class GameEngine:
                         player = self.get_player_by_id(this_player_id)
                         for unit in player.units:
                             if unit.task == "going_to_battle":
-                                action.go_battle(unit, unit.target_attack, self.get_current_time())
+                                enemy = unit.target_attack
+                                PacketManager.create_unit_packet(unit, "go_battle", self.get_current_time, enemy.name, enemy.position[0], enemy.position[1], enemy.hp)
+                                #action.go_battle(unit, unit.target_attack, self.get_current_time())
                             elif unit.task == "attacking":
-                                action._attack(unit, unit.target_attack, self.get_current_time())
+                                enemy = unit.target_attack
+                                PacketManager.create_unit_packet(unit, "_attack", self.get_current_time, enemy.name, enemy.position[0], enemy.position[1], enemy.hp)
+                                #action._attack(unit, unit.target_attack, self.get_current_time())
                             elif unit.target_position:
                                 target_x, target_y = unit.target_position
-                                action.move_unit(unit, target_x, target_y, self.get_current_time())
+                                PacketManager.create_unit_packet(unit, "move_unit", self.get_current_time(), None, target_x, target_y)
+                                #action.move_unit(unit, target_x, target_y, self.get_current_time())
                             elif unit.task == "gathering" or unit.task == "returning":
-                                action._gather(unit, unit.last_gathered, self.get_current_time())
+                                resource_type = unit.last_gathered
+                                x, y = unit.target_resource
+                                PacketManager.create_unit_packet(unit, "_gather", self.get_current_time(), resource_type, x, y)
+                                #action._gather(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "marching":
-                                action.gather_resources(unit, unit.last_gathered, self.get_current_time())
+                                resource_type = unit.last_gathered
+                                PacketManager.create_unit_packet(unit, "gather_resources", self.get_current_time(), resource_type)
+                                #action.gather_resources(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "is_attacked":
-                                action._attack(unit, unit.is_attacked_by, self.get_current_time())
+                                enemy = unit.is_attacked_by
+                                PacketManager.create_unit_packet(unit, "_attack", self.get_current_time, enemy.name, enemy.position[0], enemy.position[1], enemy.hp)
+                                #action._attack(unit, unit.is_attacked_by, self.get_current_time())
                             elif unit.task == "going_to_construction_site":
-                                action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                                building_type = unit.construction_type.name
+                                x, y = unit.target_buiilding
+                                PacketManager.create_unit_packet(unit, "construct_building", self.get_current_time(), building_type, x, y)
+                                #action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                             elif unit.task == "constructing":
-                                action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                                building_type = unit.construction_type.name
+                                x, y = unit.target_buiilding
+                                PacketManager.create_unit_packet(unit, "_construct", self.get_current_time(), building_type, x, y)
+                                #action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                         for building in player.buildings:
                             if hasattr(building, 'training_queue') and building.training_queue != []:
                                 unit = building.training_queue[0]
