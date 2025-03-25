@@ -1,14 +1,18 @@
 from time import sleep
-
+import hashlib
 class GameRoomManager:
     _instance = None
-    _room_password = "secretpass"
-    _room_key =  '16_byte_key_1234'
+    _room_password: str =""
     
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(GameRoomManager, cls).__new__(cls)
         return cls._instance
+    
+    @classmethod
+    def get_aes_key(self) -> bytes:
+        """Retourne une clé AES valide générée à partir du mot de passe."""
+        return hashlib.sha256(GameRoomManager._room_password.encode('utf-8')).digest()
 
     def __init__(self, data_processor):
         if not hasattr(self, 'initialized'):
@@ -38,8 +42,6 @@ class GameRoomManager:
                 password=GameRoomManager._room_password
             )
     
-    def get_password(self):
-        return GameRoomManager._room_password
     
 class GameRoom:
     _instance = None

@@ -12,9 +12,9 @@ from time import sleep
 from .Game_Room import GameRoomManager
 from network.Game_Room import GameRoomManager
 
-BUF = 512
+BUF = 1200
 SERVER_IP = "127.0.0.1"
-
+SECRET_KEY = GameRoomManager.get_aes_key()
 
 class PacketManager:
     _instance = None 
@@ -35,14 +35,8 @@ class PacketManager:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.server_address = ("127.0.0.1")
             try:
-                with open("../network/current_players.txt", "r") as file:
-                    current_number = int(file.read().strip())
-                port_id = current_number % 8
-                self.server_port = 8080 + port_id
-                process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)], creationflags=subprocess.CREATE_NEW_CONSOLE)
-                current_number += 1
-                with open("../network/current_players.txt", "w") as file:
-                    file.write(str(current_number))
+                self.server_port = 8080
+                process = subprocess.Popen(["..\\network\\broadserv.exe"], creationflags=subprocess.CREATE_NEW_CONSOLE)
                 sleep(1.5)
             except (FileNotFoundError, ValueError) as e:
                 print(f"Error reading or updating current_players.txt: {e}")
@@ -58,7 +52,7 @@ class PacketManager:
         """Chiffre un message avec AES."""
         backend = default_backend()
         iv = os.urandom(16)  # Générer un vecteur d'initialisation aléatoire
-        SECRET_KEY = GameRoomManager._room_key.encode('utf-8')
+        
         cipher = Cipher(algorithms.AES(SECRET_KEY), modes.CFB(iv), backend=backend)
         encryptor = cipher.encryptor()
 
@@ -75,7 +69,7 @@ class PacketManager:
         backend = default_backend()
         iv = encrypted_message[:16]  # Extraire le vecteur d'initialisation
         encrypted_data = encrypted_message[16:]
-        SECRET_KEY = GameRoomManager._room_key.encode('utf-8')
+        
         cipher = Cipher(algorithms.AES(SECRET_KEY), modes.CFB(iv), backend=backend)
         decryptor = cipher.decryptor()
 
