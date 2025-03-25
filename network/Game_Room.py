@@ -1,8 +1,13 @@
 from time import sleep
-
+import hashlib
 class GameRoomManager:
     _instance = None
-    _room_password: str = "mysecretpassword"  
+    _room_password: str =""
+
+    @classmethod
+    def get_aes_key(self) -> bytes:
+        """Retourne une clé AES valide générée à partir du mot de passe."""
+        return hashlib.sha256(GameRoomManager._room_password.encode('utf-8')).digest()
     
     def __new__(cls, *args, **kwargs):
         if not cls._instance:

@@ -13,8 +13,7 @@ from network.Game_Room import GameRoomManager
 
 BUF = 12000
 SERVER_IP = "127.0.0.1"
-SECRET_KEY = GameRoomManager._room_password.encode('utf-8')
-
+SECRET_KEY = GameRoomManager.get_aes_key()
 class PacketManager:
     _instance = None 
     package_header = ""   
