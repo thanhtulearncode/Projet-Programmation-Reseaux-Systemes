@@ -158,7 +158,10 @@ int main(int argc, char* argv[]) {
 
     // Get local IP address
     getLocalIPAddress(&local_addr);
-
+    char *local_ip = inet_ntoa(local_addr.sin_addr);
+    char iplocal[strlen(local_ip)];
+    strcpy(iplocal, local_ip);
+    
     // Set broadcast address
     memset(&broadcast_addr, 0, sizeof(broadcast_addr));
     broadcast_addr.sin_family = AF_INET;
@@ -208,8 +211,8 @@ int main(int argc, char* argv[]) {
                 continue;
             } 
             printf("Message received from SERVER C: %s, address: %s\n", buffer, inet_ntoa(udp_addr.sin_addr));
-            if (strcmp(inet_ntoa(udp_addr.sin_addr), inet_ntoa(local_addr.sin_addr)) == 0) {
-                printf("Ignored own broadcast from %s\n", inet_ntoa(udp_addr.sin_addr));
+            if (strcmp(inet_ntoa(udp_addr.sin_addr), iplocal) == 0) {
+                printf("Ignored own broadcast from %s %s\n", inet_ntoa(udp_addr.sin_addr), iplocal);
                 continue;
             }
             if (sendto(client_sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&client_addr, client_len) == SOCKET_ERROR) {
