@@ -356,7 +356,7 @@ class Action:
                     if resource_type == "Gold" or resource_type == "Wood":
                         tile.resource.amount -= amount_to_gather
                         #create_resource_map_packet(self, resource, x, y, type):
-                        PacketManager.create_resource_map_packet(tile.resource, unit.target_resource[0], unit.target_resource[1], "update_resource")
+                        #PacketManager.create_resource_map_packet(tile.resource, unit.target_resource[0], unit.target_resource[1], "update_resource")
                         # If resource is depleted, remove it from the map
                         if tile.resource.amount <= 0:
                             tile.resource = None
