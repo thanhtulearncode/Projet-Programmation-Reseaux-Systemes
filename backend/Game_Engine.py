@@ -135,6 +135,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
             elif "Archer" in unit_name:
                 unit = Archer(player, position = unit_position, name = unit_name)
@@ -146,6 +149,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
             elif "Horseman" in unit_name:
                 unit = Horseman(player, position = unit_position, name = unit_name)
@@ -157,6 +163,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
             else:
                 #Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
@@ -169,6 +178,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
 
         elif type == "place_unit":
@@ -252,6 +264,7 @@ class GameEngine:
 
         try:
             while not self.check_victory():
+                start_time = self.get_current_time()
                 # Mettre à jour current_time au début de chaque itération si le jeu n'est pas en pause
                 if not self.is_paused:
                     self.current_time = time.time()
@@ -404,6 +417,8 @@ class GameEngine:
                     self.update_gui()
 
                 self.turn += 1
+                elapsed_time = self.get_current_time - start_time
+                time.sleep(max(0, 0.02 - elapsed_time))  # Limit the frame rate to 200 FPS
 
             active_players = [p for p in self.players if p.units or p.buildings]
             self.debug_print(f"Player {active_players[0].name} wins the game!", 'Magenta')
@@ -698,24 +713,24 @@ class GameEngine:
                                         action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
                                     else: 
                                         building.target = None
-                            if self.turn % 200 == 0:
+                            if self.turn % 400 == 0:
                                 PacketManager().package = PacketManager().create_current_state_packet([player])
                                 #PacketManager().package = player.package
                                 PacketManager().send_packet()
-
-                        request = DataProcessor().update_data() 
-                        if request:
-                            if request[1] == "scan_rooms":
-                                gr= GameRoom()
-                                PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
-                                PacketManager().send_packet()
-                            else:
-                                PacketManager().package = PacketManager().create_map_packet(self.map)
-                                DataProcessor().map = PacketManager().package
-                                PacketManager().send_packet()
-                                PacketManager().package = PacketManager().create_current_state_packet(self.players)
-                                PacketManager().send_packet()
-                                gr.player_count +=1
+                        for i in range(len(self.players)):
+                            request = DataProcessor().update_data()
+                            if request:
+                                if request[1] == "scan_rooms" :
+                                    gr= GameRoom()
+                                    PacketManager().package =  f"{gr.number_of_players};{gr.game_mode};{gr.map_size[0]};{gr.map_size[1]};{gr.player_count};{gr.civilization};{gr.ai_mode}"
+                                    PacketManager().send_packet()
+                                else:
+                                    PacketManager().package = PacketManager().create_map_packet(self.map)
+                                    DataProcessor().map = PacketManager().package
+                                    PacketManager().send_packet()
+                                    PacketManager().package = PacketManager().create_current_state_packet(self.players)
+                                    PacketManager().send_packet()
+                                    gr.player_count +=1
                                 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

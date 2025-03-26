@@ -1118,7 +1118,7 @@ def start_menu(save_file=None):
                         DataProcessor().packet_manager.send_packet()
                         pygame.quit()  # Moved after game setup but before running
                         curses.wrapper(lambda stdscr: game_engine.run_multi_player(stdscr, 0))
-                        return
+                    
                     
         elif result == 'Join Room':
             join_menu = JoinRoomMenu() 
