@@ -5,6 +5,8 @@ import select
 import sys
 import subprocess
 from time import sleep
+import base64
+from .Game_Room import GameRoomManager
 
 BUF = 12000
 SERVER_IP = "127.0.0.1"
@@ -31,7 +33,7 @@ class PacketManager:
                     current_number = int(file.read().strip())
                 port_id = current_number % 8
                 self.server_port = 8080 + port_id
-                process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)], creationflags=subprocess.CREATE_NEW_CONSOLE)
+                process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)])
                 current_number += 1
                 with open("../network/current_players.txt", "w") as file:
                     file.write(str(current_number))
@@ -41,7 +43,14 @@ class PacketManager:
                 self.server_port = 8080
             PacketManager._initialized = True
 
+    def xor_encrypt(self, text: str, key: str = "mysecretkey") -> str:
+        encrypted_bytes = bytearray(ord(c) ^ ord(key[i % len(key)]) for i, c in enumerate(text))
+        return base64.b64encode(encrypted_bytes).decode()  # Convert to Base64 string
 
+    def xor_decrypt(self, enc_text: str, key: str = "mysecretkey") -> str:
+        encrypted_bytes = base64.b64decode(enc_text)  # Decode Base64
+        return "".join(chr(b ^ ord(key[i % len(key)])) for i, b in enumerate(encrypted_bytes))
+    
     @staticmethod
     def process_packet(data) -> list:
         result = []
@@ -111,7 +120,8 @@ class PacketManager:
     def send_packet(self):
         self.socket.setblocking(False)
         try:
-            self.socket.sendto(self.package.encode('utf-8'), (SERVER_IP, self.server_port))
+            message = self.xor_encrypt(self.package, str(GameRoomManager._room_password))
+            self.socket.sendto(message.encode('utf-8'), (SERVER_IP, self.server_port))
             print(f"Message envoyé au serveur")
         except socket.error as e:
             print(f"Erreur lors de l'envoi du message: {e}")
@@ -128,10 +138,10 @@ class PacketManager:
             received_packets = None
             for sock in readable:
                 if sock == self.socket:
-                    
                     received_packets,_= self.socket.recvfrom(BUF)
+                    received_packets = self.xor_decrypt(received_packets.decode('utf-8'), str(GameRoomManager._room_password))
 
-            return received_packets.decode('utf-8') if received_packets else None
+            return received_packets if received_packets else None
     
 class Resource_manager:
     _instance = None
