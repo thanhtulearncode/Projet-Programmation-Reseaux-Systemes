@@ -40,6 +40,7 @@ class PacketManager:
                 port_id = current_number % 8
                 self.server_port = 8080 + port_id
                 process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)])
+                process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)])
                 current_number += 1
                 with open("../network/current_players.txt", "w") as file:
                     file.write(str(current_number))
@@ -49,7 +50,14 @@ class PacketManager:
                 self.server_port = 8080
             PacketManager._initialized = True
 
+    def xor_encrypt(self, text: str, key: str = "mysecretkey") -> str:
+        encrypted_bytes = bytearray(ord(c) ^ ord(key[i % len(key)]) for i, c in enumerate(text))
+        return base64.b64encode(encrypted_bytes).decode()  # Convert to Base64 string
 
+    def xor_decrypt(self, enc_text: str, key: str = "mysecretkey") -> str:
+        encrypted_bytes = base64.b64decode(enc_text)  # Decode Base64
+        return "".join(chr(b ^ ord(key[i % len(key)])) for i, b in enumerate(encrypted_bytes))
+    
     @staticmethod
     def process_packet(data) -> list:
         result = []
@@ -177,8 +185,8 @@ class PacketManager:
             received_packets = None
             for sock in readable:
                 if sock == self.socket:
-                    
                     received_packets,_= self.socket.recvfrom(BUF)
+                    received_packets = self.xor_decrypt(received_packets.decode('utf-8'), str(GameRoomManager._room_password))
 
                 if received_packets:
                     try:
