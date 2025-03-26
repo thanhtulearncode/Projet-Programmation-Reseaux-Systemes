@@ -135,6 +135,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
             elif "Archer" in unit_name:
                 unit = Archer(player)
@@ -146,6 +149,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
             elif "Horseman" in unit_name:
                 unit = Horseman(player, position = unit_position, name = unit_name)
@@ -157,6 +163,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
             else:
                 #Unit.spawn_unit(Villager, unit_position[0], unit_position[1], player, self.map)
@@ -169,6 +178,9 @@ class GameEngine:
                 player.units.append(unit)
                 x, y = unit_position
                 player.population = len(player.units)
+                unit.hp = unit_health  
+                unit.task = unit_task
+                unit.direction = unit_direction
                 self.map.place_unit(x, y, unit)
 
         elif type == "place_unit":
