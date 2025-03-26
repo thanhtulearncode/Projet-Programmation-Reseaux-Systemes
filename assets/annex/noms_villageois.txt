@@ -110,7 +110,7 @@ Anne-Claire
 Anne-Clotilde 
 Anne-Cecile 
 Anne-France 
-Anne-Fran�oise 
+Anne-Francoise
 Anne-Gaelle 
 Anne-Josephine 
 Anne-Laure 
@@ -443,7 +443,7 @@ Fran�oi/Fran�ois
 Fran�ois-Xav/Fran�ois-Xavier
 Fran�ois-Xavier 
 Fran�ois 
-Fran�oise 
+Francoise
 Fred 
 Freddy 
 Frederica 
@@ -870,7 +870,7 @@ Marie-Dominique
 Marie-Evelyn 
 Marie-Florence 
 Marie-France 
-Marie-Fran�oise 
+Marie-Francoise
 Marie-Gabrielle 
 Marie-Helene 
 Marie-Isabelle 

@@ -126,7 +126,7 @@ class GameEngine:
         if type == "spawn_unit" or type == "current_unit":
             unit_position = int(unit_position[0]), int(unit_position[1])
             if "Swordsman" in unit_name:
-                unit = Swordsman(player, position = unit_position, name = unit_name)
+                unit = Swordsman(player)
                 for u in player.units:
                     if u.name == unit_name:
                         player.units.remove(u)
@@ -137,7 +137,7 @@ class GameEngine:
                 player.population = len(player.units)
                 self.map.place_unit(x, y, unit)
             elif "Archer" in unit_name:
-                unit = Archer(player, position = unit_position, name = unit_name)
+                unit = Archer(player)
                 for u in player.units:
                     if u.name == unit_name:
                         player.units.remove(u)
@@ -715,7 +715,6 @@ class GameEngine:
                                 PacketManager().send_packet()
                                 PacketManager().package = PacketManager().create_current_state_packet(self.players)
                                 PacketManager().send_packet()
-                                gr.player_count +=1
                                 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

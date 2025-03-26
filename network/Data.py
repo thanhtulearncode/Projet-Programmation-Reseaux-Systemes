@@ -5,9 +5,17 @@ import select
 import sys
 import subprocess
 from time import sleep
+from network.Game_Room import GameRoomManager
+import os
+from ctypes import WinError
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.backends import default_backend
+import base64
 
 BUF = 12000
 SERVER_IP = "127.0.0.1"
+SECRET_KEY = GameRoomManager.get_aes_key()
 class PacketManager:
     _instance = None 
     package_header = ""   
@@ -31,7 +39,7 @@ class PacketManager:
                     current_number = int(file.read().strip())
                 port_id = current_number % 8
                 self.server_port = 8080 + port_id
-                process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)], creationflags=subprocess.CREATE_NEW_CONSOLE)
+                process = subprocess.Popen(["..\\network\\udp.exe", str(port_id)])
                 current_number += 1
                 with open("../network/current_players.txt", "w") as file:
                     file.write(str(current_number))
@@ -93,7 +101,38 @@ class PacketManager:
         
         return packet
 
+    def encrypt_message(self, message: str) -> str:
+        """Chiffre un message avec AES en mode CFB et retourne une chaîne encodée en base64."""
+        backend = default_backend()
+        iv = os.urandom(16)  # Generate a random 16-byte IV
+        cipher = Cipher(algorithms.AES(SECRET_KEY), modes.CFB(iv), backend=backend)
+        encryptor = cipher.encryptor()
 
+        # Encrypt the message
+        encrypted_message = encryptor.update(message.encode('utf-8')) + encryptor.finalize()
+
+        # Prefix the IV and convert to base64
+        encrypted_message_with_iv = iv + encrypted_message
+        return base64.b64encode(encrypted_message_with_iv).decode('utf-8')  # Return as base64 string
+
+    def decrypt_message(self, encrypted_message_base64: str) -> str:
+        """Déchiffre un message avec AES en mode CFB à partir d'une chaîne base64."""
+        backend = default_backend()
+
+        # Decode the base64 message
+        encrypted_message = base64.b64decode(encrypted_message_base64)
+
+        # Extract the IV
+        iv = encrypted_message[:16]
+        encrypted_data = encrypted_message[16:]
+
+        cipher = Cipher(algorithms.AES(SECRET_KEY), modes.CFB(iv), backend=backend)
+        decryptor = cipher.decryptor()
+
+        # Decrypt the message
+        data = decryptor.update(encrypted_data) + decryptor.finalize()
+        return data.decode('utf-8')  # Decode the decrypted message back to string
+    
     def extract_package(self, row):
         PacketManager.package_header = f"{row[0]};{row[1]};{row[2]};{row[3]};{row[4]}"
         return PacketManager.package_header
@@ -109,19 +148,29 @@ class PacketManager:
                 
     #send self.package to the server
     def send_packet(self):
+        """Chiffre et envoie un message au serveur."""
         self.socket.setblocking(False)
+        passroom = GameRoomManager._room_password
         try:
-            self.socket.sendto(self.package.encode('utf-8'), (SERVER_IP, self.server_port))
-            print(f"Message envoyé au serveur")
+            
+            self.package += f";{passroom}"
+            print(f"Message à chiffrer: {self.package}")
+            encrypted_message = self.encrypt_message(self.package)
+            #encrypted_message = self.package.encode("utf-8")
+            self.socket.sendto(encrypted_message.encode('utf-8'), (SERVER_IP, self.server_port))
+            print(f"Message chiffré envoyé au serveur")
         except socket.error as e:
             print(f"Erreur lors de l'envoi du message: {e}")
         self.package = ""
 
     def receive_packet(self, time_out = 0)-> str:
+        """Reçoit et déchiffre un message du serveur."""
         try:
             self.socket.setblocking(False)  
         except socket.error as e:
             sys.exit(1)
+
+        passroom = GameRoomManager._room_password
 
         while True:    
             readable, _, _ = select.select([self.socket], [], [], time_out)
@@ -131,7 +180,22 @@ class PacketManager:
                     
                     received_packets,_= self.socket.recvfrom(BUF)
 
-            return received_packets.decode('utf-8') if received_packets else None
+                if received_packets:
+                    try:
+                        decrypted_message = self.decrypt_message(received_packets)
+                        #decrypted_message = received_packets.decode("utf-8")
+                        print(f"Message déchiffré: {decrypted_message}")
+                        if decrypted_message.endswith(f";{passroom}"):
+                            decrypted_message = decrypted_message[:-len(f";{passroom}")]
+                        return decrypted_message
+                    except Exception as e:
+                        print(f"Erreur lors du déchiffrement : {e}")
+                        return None
+                    #if decrypted_message.endswith(f";{passroom}"):
+                        decrypted_message = decrypted_message[:-len(f";{passroom}")]
+                        
+                        return decrypted_message
+            return None
     
 class Resource_manager:
     _instance = None
