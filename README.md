@@ -1,119 +1,131 @@
-# Projet Python : Alge of EmpAlres
+# AIge of EmpAIre
 
-## 📜 Introduction
+**AIge of EmpAIre** est un clone de jeu de stratégie en temps réel (RTS) inspiré d'Age of Empires. Développé principalement en Python avec Pygame pour le moteur graphique et certaines logiques, il intègre également des composants en C pour la gestion réseau haute performance (UDP/Broadcast).
 
-Ce projet consiste à implémenter un moteur de jeu de stratégie en temps réel (RTS) simplifié, inspiré par *Age of Empires*. L'objectif est de créer un environnement où des intelligences artificielles (IA) s'affrontent dans des batailles stratégiques. Le projet se concentre sur le développement du moteur de jeu et la création de profils d'IA variés (défensifs, offensifs, etc.).
+## 📋 Fonctionnalités
 
-Le jeu se déroule sur une carte générée aléatoirement, avec des ressources limitées et des unités spécifiques. Les joueurs (IA) doivent gérer leurs ressources, construire des bâtiments, et entraîner des unités pour vaincre leurs adversaires.
+- **Moteur isométrique** : Vue en 2.5D avec gestion de la caméra et mini-map.
+- **Unités et Bâtiments** : Gestion de différents types d'unités (Villageois, Épéistes, Archers, Cavaliers) avec animations (marche, attaque, mort, travail).
+- **Ressources** : Collecte de bois, or et nourriture.
+- **Multijoueur** : Architecture client-serveur hybride Python/C pour le jeu en réseau.
+- **IA** : Présence de composants d'intelligence artificielle (indiqués par la structure du projet).
 
-## 🎯 Objectifs du Projet
+## ⚙️ Prérequis
 
-- **Implémenter un moteur de jeu RTS simplifié**.
-- **Développer des profils d'IA** pour des stratégies variées.
-- **Générer des cartes aléatoires** avec des ressources stratégiquement placées.
-- **Visualiser le jeu** en mode terminal et en 2.5D (isométrique).
-- **Permettre la sauvegarde et le chargement** des parties.
+### Python (Client & Logique)
 
-## 🛠️ Fonctionnalités
+Le jeu nécessite **Python 3.x** et les bibliothèques suivantes :
 
-### 🗺️ Génération de Carte
-- **Carte aléatoire** de taille minimale 120x120.
-- **Deux types de cartes** : ressources dispersées ou concentrées au centre.
+- `pygame` (moteur graphique)
+- `numpy` (calculs matriciels/numériques)
+- `pillow` (gestion avancée d'images, PIL)
 
-### 🏗️ Bâtiments et Unités
-- **Bâtiments** : Town Centre, House, Camp, Farm, Barracks, Stable, Archery Range, Keep.
-- **Unités** : Villager, Swordsman, Horseman, Archer.
+Vous pouvez installer les dépendances via pip :
 
-### 🤖 Intelligence Artificielle
-- **Profils d'IA** : Défensif, Offensif, Équilibré.
-- **Stratégies** : Gestion des ressources, attaques coordonnées, défense.
+```bash
+pip install pygame numpy pillow
+```
 
-### 🎮 Visualisation
-- **Mode Terminal** : Affichage simplifié pour suivre le déroulement du jeu.
-- **Mode 2.5D** : Vue isométrique avec des sprites pour une expérience immersive.
+### C (Serveur Réseau - Windows)
 
-### 💾 Sauvegarde et Chargement
-- **Sauvegarde rapide** (F10) et **chargement rapide** (F12).
-- **Gestion de fichiers** : Nombre illimité de sauvegardes.
+Pour héberger des parties multijoueurs, vous devez compiler les serveurs C.
 
-## 📊 Schémas
+- **Compilateur** : GCC (MinGW-w64 recommandé pour Windows).
+- Voir la section [Configuration Réseau](https://www.google.com/search?q=%23-configuration-r%C3%A9seau-windows) pour les détails.
 
-### Architecture du Moteur de Jeu
-```mermaid
-graph TD
-    A[Game Engine] --> B[Map Generation]
-    A --> C[AI Logic]
-    A --> D[Unit Management]
-    A --> E[Resource Management]
-    A --> F[Visualization]
-    F --> G[Terminal View]
-    F --> H[2.5D View]
+## 🚀 Démarrage
 
-# Projet-Programmation-Reseaux-Systemes
-1. créer des paquets:
-Data.py
-1.1. create_map_packet(self, map):
-    map : Map Object
-    output : paquet de type string
-    Exemple: 
-    "
-    ...WWW...G
-    ....W..G..
-    ..........
-    ..GG......
-    WWWW......
-    "
-1.2. create_unit_packet(self, unit, type): 
-    input:
-        unit : Unit Object
-        type : "spawn_unit", "place_unit", "remove_unit", "kill_unit"
-    output : string f"{type};{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.player.id}"
-    Exemple: "place_unit;Thibaud;35;106;25;2"
-1.3. create_building_packet(self, building, type):
-    input:
-        building : Building Object
-        type : "spawn_building", "kill_building"
-    output : string f"{type};{building.name};{building.position[0]};{building.position[1]};{building.hp};{building.player.id}"
-    Exemple: "spawn_building;Town Center;34;106;1000;2"
-2. mettre à jour le jeu à partir des paquets:
-Terrain.py
-2.1. update_initial_map(self, map_packet):
-    input:
-        map_packet : packet de type string (actuel, on peut optimiser le type de map_packet) 
-    output : ressources initiales du jeu
-Game_Engine.py
-2.2. update_units(self, unit_packet):
-    input:
-        unit_packet : packet de type string (actuel) #on peut l'optimiser
-    output : état actuel des unités
-2.3. update_buildings(self, building_packet):
-    input:
-        unit_packet : packet de type string (actuel) #on peut l'optimiser
-    output : état actuel des bâtiments
-2.4. update_map(self, packet):
-    input:
-        unit_packet : grand paquet de type string contenant les état des bâtiment et des unités (mixe)
-    output : état actuel du jeu
+Le point d'entrée principal du jeu est situé dans `backend/main.py`.
 
-### thiếu cập nhật resource hiện tại, đợi Trí cmt readme ###
+### Lancement standard
 
+Depuis la racine du projet :
 
-######################################
-1. packet = creat_blabla_packet(): tạo packet và cộng dồn vào Packetmanager, trả về packet đại diện cho thay đổi bên dưới
-2. processing() :
-2.1. gửi packet từ PacketManager, sau đó nhận packet và lại cộng dồn vào, ta được packets của toàn bộ players
-2.2. lọc
-3. kiểm tra packet còn nằm trong PacketManager.package không, nếu có thì update_game()
+```bash
+python "AIge of EmpAIre/backend/main.py"
+```
 
-Ví dụ packet:
-"""unit_packet = f"{current_time_call};{unit.player.id};{type};{target.position[0]};{target.position[1]};"
-        unit_packet += f"{unit.name};{unit.position[0]};{unit.position[1]};{unit.hp};{unit.task};{unit.direction};"   
-        self.package += f"{unit_packet}*""""
+### Options de lancement
 
-"""def create_building_packet(self, building, type, target, current_time_call):
-        building_packet = f"{current_time_call};{building.player.id};{type};{target.position[0]};{target.position[1]};{ta}"
-        building_packet += f"{building.name};{building.position[0]};{building.position[1]};{building.hp}"
-        return f"{building_packet}*""""
-"1742843162.730921;1;_attack;45;45;20;Mbappé;34;44;20;going_to_battle;southwest"
-"1742843162.730921;1;spawn_building;45;45;20;House;None;None;None"
-"1742843162.730921;1;kill_building;None;None;House;45;45;0"
+Le jeu supporte des arguments en ligne de commande :
+
+- **Mode Debug** : Active les fonctionnalités de débogage.
+  ```bash
+  python "AIge of EmpAIre/backend/main.py" -d
+  # ou
+  python "AIge of EmpAIre/backend/main.py" --debug
+  ```
+- **Charger une sauvegarde** : Lance le jeu directement depuis un fichier de sauvegarde spécifique.
+  ```bash
+  python "AIge of EmpAIre/backend/main.py" -s "chemin/vers/sauvegarde.save"
+  ```
+
+## 🎮 Contrôles
+
+### Clavier
+
+| Touche                      | Action                                 |
+| :-------------------------- | :------------------------------------- |
+| **Flèches directionnelles** | Déplacer la caméra                     |
+| **F1**                      | Afficher/Masquer les ressources        |
+| **F2**                      | Afficher/Masquer les unités            |
+| **F3**                      | Afficher/Masquer la mini-map           |
+| **F4**                      | Activer/Désactiver le "Code de triche" |
+| **F8**                      | Basculer en plein écran                |
+| **F9**                      | Quitter le jeu                         |
+
+### Souris
+
+- **Clic Gauche** : Sélectionner des unités, interagir avec l'interface.
+- **Maintenir Clic Gauche sur Mini-map** : Déplacement rapide de la caméra.
+
+## 🌐 Configuration Réseau (Windows)
+
+Le multijoueur repose sur deux composants C à compiler : un serveur de broadcast et un serveur UDP par machine.
+
+### 1\. Installation du compilateur (GCC/MinGW-w64)
+
+1.  Téléchargez la version 14 x64 de MinGW-w64 sur [winlibs.com](https://winlibs.com/).
+2.  Extrayez l'archive.
+3.  Ajoutez le chemin du dossier `bin` (ex: `...\mingw64\bin`) à votre variable d'environnement `PATH` Windows.
+4.  Vérifiez l'installation dans un terminal avec `gcc --version`.
+
+### 2\. Compilation des serveurs
+
+Naviguez dans le dossier `AIge of EmpAIre/network/` et compilez les fichiers C :
+
+**Serveur Broadcast (broadserv) :**
+
+```bash
+gcc -o broadserv broadserv.c -lws2_32 -liphlpapi
+```
+
+_Utilise le port 8080 (inter-serveur) et 8081 (serveur-client)._
+
+**Serveur UDP Machine (servudp) :**
+
+```bash
+gcc -o udp servudp.c -lws2_32
+```
+
+### 3\. Configuration du Pare-feu
+
+Autorisez le trafic UDP sur les ports nécessaires (exemple pour le port 8080) :
+
+- **PowerShell** :
+  ```powershell
+  New-NetFirewallRule -DisplayName "Allow UDP Port" -Direction Inbound -Protocol UDP -Action Allow -LocalPort 8080 -Profile Private
+  ```
+- **CMD** :
+  ```cmd
+  netsh advfirewall firewall add rule name="Allow UDP Port" protocol=UDP dir=in localport=8080 action=allow profile=private
+  ```
+
+### 4\. Exécution des serveurs
+
+- Lancez `broadserv.exe` (une seule instance par réseau local).
+- Sur chaque machine jouant, lancez `udp.exe` avec un ID unique :
+  ```bash
+  .\udp.exe 1
+  # La machine 1 écoutera sur les ports 8081 (Python) et 8091 (C)
+  ```
