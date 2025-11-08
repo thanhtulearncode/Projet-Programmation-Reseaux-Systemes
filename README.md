@@ -42,7 +42,7 @@ Le point d'entrée principal du jeu est situé dans `backend/main.py`.
 Depuis la racine du projet :
 
 ```bash
-python "AIge of EmpAIre/backend/main.py"
+python "backend/main.py"
 ```
 
 ### Options de lancement
@@ -51,13 +51,13 @@ Le jeu supporte des arguments en ligne de commande :
 
 - **Mode Debug** : Active les fonctionnalités de débogage.
   ```bash
-  python "AIge of EmpAIre/backend/main.py" -d
+  python "backend/main.py" -d
   # ou
-  python "AIge of EmpAIre/backend/main.py" --debug
+  python "backend/main.py" --debug
   ```
 - **Charger une sauvegarde** : Lance le jeu directement depuis un fichier de sauvegarde spécifique.
   ```bash
-  python "AIge of EmpAIre/backend/main.py" -s "chemin/vers/sauvegarde.save"
+  python "backend/main.py" -s "assets/annex/game_save*.dat"
   ```
 
 ## 🎮 Contrôles
